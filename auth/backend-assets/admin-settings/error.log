@@ -1,0 +1,3 @@
+No rows affectedNo rows affectedQuery: INSERT INTO blocked_ips (ip_address, blocked_until) SELECT ip_address, NOW() FROM blocked_ips WHERE id = :id
+Parameters: nullNo rows affected for id 6Query: INSERT INTO blocked_ips (ip_address, blocked_until) SELECT ip_address, NOW() FROM blocked_ips WHERE id = :id LIMIT 1
+Params: nullNo rows affected for id 6No rows affected for id 22Invalid actionInvalid actionInvalid actionInvalid actionInvalid action
