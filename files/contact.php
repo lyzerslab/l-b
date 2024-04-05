@@ -17,16 +17,18 @@ require_once "../auth/db-connection/config.php";
 
 // Fetch additional user information from the database using the user ID
 $userId = $_SESSION["id"];
-$sql = "SELECT profile_photo FROM admin_users WHERE id = :userId";
+$sql = "SELECT profile_photo, is_admin FROM admin_users WHERE id = :userId";
 
 if ($stmt = $connection->prepare($sql)) {
     $stmt->bindParam(":userId", $userId, PDO::PARAM_INT);
 
     if ($stmt->execute()) {
         $stmt->bindColumn("profile_photo", $profilePhoto);
+        $stmt->bindColumn("is_admin", $isAdmin); 
         if ($stmt->fetch()) {
             // User profile photo found, update the session
             $_SESSION["profile_photo"] = $profilePhoto;
+             $_SESSION["is_admin"] = $isAdmin;
         } else {
             // User not found or profile photo not set, you can handle this case
         }
@@ -91,14 +93,14 @@ if ($stmt = $connection->prepare($sql)) {
 
                         <li class="">
                             <a href="employees.php">
-                                <i class="fa-solid fa-gear"></i>
+                                <i class="fa-regular fa-user"></i>
                                 <span class="block">Employees</span>
                             </a>
                         </li>
 
                          <li>
                             <a href="projects.php">
-                                <i class="fa-solid fa-gear"></i>
+                                <i class="fa-solid fa-file"></i>
                                 <span class="block">Projects</span>
                             </a>
                         </li>
@@ -171,7 +173,13 @@ if ($stmt = $connection->prepare($sql)) {
 
                                     <div class="flex-col">
                                         <span class="block"><?php echo strtoupper(htmlspecialchars($_SESSION["username"])); ?></span>
-                                        <span class="block"> Super Admin</span>
+                                        <?php
+                                        if($isAdmin==1){
+                                            echo '<span class="block"> Super Admin</span>';
+                                        }else{
+                                            echo '<span class="block"> Admin </span>';
+                                        }
+                                        ?>
                                     </div>
                                 </div>
 
@@ -191,7 +199,7 @@ if ($stmt = $connection->prepare($sql)) {
                         <div class="subscriber-data">
                             <?php
                             // Fetch data from the Formdata table
-                            $query = "SELECT * FROM `Formdata`";
+                            $query = "SELECT * FROM `formdata`";
                             $stmt = $connection->prepare($query);
                             
                             // Execute the query
@@ -232,9 +240,19 @@ if ($stmt = $connection->prepare($sql)) {
                                                 <td><?php echo $subscriber['web_package']; ?></td>
                                                 <td><?php echo $subscriber['message']; ?></td>
                                                 <td><?php echo $subscriber['created_at']; ?></td>
-                                                <td>
-                                                    <a href="replayCustomer.php?id=<?php echo $subscriber['id']; ?>" class="btn btn-primary">Reply Email</a>
-                                                </td>
+<?php
+
+// Check if user is logged in and session ID is set
+if($isAdmin==1) {
+
+?>
+        <td>
+            <a href="replayCustomer.php?id=<?php echo $subscriber['id']; ?>" class="btn btn-primary">Reply Email</a>
+        </td>
+<?php
+    }
+?>
+
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -244,7 +262,7 @@ if ($stmt = $connection->prepare($sql)) {
                         
                         <footer class="footer mt-5">
                             <p class="mb-0">
-                                Copyright © <span>2024</span> Ecommerce . All Rights Reserved.
+                                Copyright © <span>2024</span> Lyzerslab . All Rights Reserved.
                             </p>
                         </footer>
                     </div>

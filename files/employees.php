@@ -13,16 +13,18 @@ require_once "../auth/db-connection/config.php";
 
 // Fetch additional user information from the database using the user ID
 $userId = $_SESSION["id"];
-$sql = "SELECT profile_photo FROM admin_users WHERE id = :userId";
+$sql = "SELECT profile_photo, is_admin FROM admin_users WHERE id = :userId";
 
 if ($stmt = $connection->prepare($sql)) {
     $stmt->bindParam(":userId", $userId, PDO::PARAM_INT);
 
     if ($stmt->execute()) {
         $stmt->bindColumn("profile_photo", $profilePhoto);
+        $stmt->bindColumn("is_admin", $isAdmin); 
         if ($stmt->fetch()) {
             // User profile photo found, update the session
             $_SESSION["profile_photo"] = $profilePhoto;
+             $_SESSION["is_admin"] = $isAdmin;
         } else {
             // User not found or profile photo not set, you can handle this case
         }
@@ -32,6 +34,7 @@ if ($stmt = $connection->prepare($sql)) {
 
     unset($stmt); // Close statement
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -86,14 +89,14 @@ if ($stmt = $connection->prepare($sql)) {
 
                         <li class="active">
                             <a href="employees.php">
-                                <i class="fa-solid fa-gear"></i>
+                                <i class="fa-regular fa-user"></i>
                                 <span class="block">Employees</span>
                             </a>
                         </li>
 
                          <li class="">
                             <a href="projects.php">
-                                <i class="fa-solid fa-gear"></i>
+                                <i class="fa-solid fa-file"></i>
                                 <span class="block">Projects</span>
                             </a>
                         </li>
@@ -145,7 +148,13 @@ if ($stmt = $connection->prepare($sql)) {
 
                                     <div class="flex-col">
                                         <span class="block"><?php echo strtoupper(htmlspecialchars($_SESSION["username"])); ?></span>
-                                        <span class="block"> Super Admin</span>
+                                        <?php
+                                        if($isAdmin==1){
+                                            echo '<span class="block"> Super Admin</span>';
+                                        }else{
+                                            echo '<span class="block"> Admin </span>';
+                                        }
+                                        ?>
                                     </div>
                                 </div>
 
@@ -162,7 +171,13 @@ if ($stmt = $connection->prepare($sql)) {
                     <div class="main">
                         <div class="header flex">
                             <h1 class="page-heading"> Employees </h1>
+                            <?php
+                            if($isAdmin){
+                            ?>
                            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#addEmployeesModal">Add Member</button>
+                           <?php
+                            }
+                            ?>
                         </div>
 
                         <!-- Modal -->
@@ -211,11 +226,25 @@ if ($stmt = $connection->prepare($sql)) {
                                                 <input type="text" class="form-control" id="presentAddress" placeholder="Enter present address">
                                             </div>
                                             <div class="form-group mb-2">
-                                                <label for="employeeType">Employee Type:</label>
-                                                <select class="form-control" id="employeeType">
+                                                <label for="hireType">Hire Type:</label>
+                                                <select class="form-control" id="hireType">
                                                     <option value="remote">Remote</option>
                                                     <option value="hybrid">Hybrid</option>
                                                     <option value="inhouse">In-house</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group mb-2">
+                                                <label for="expertType">Expert In</label>
+                                                <select class="form-control" id="expertType">
+                                                    <option value="ui/ux">UI/UX</option>
+                                                    <option value="fulltsack dev">Full-stack</option>
+                                                    <option value="front-end dev">Front-end</option>
+                                                    <option value="back-end dev">Back-end</option>
+                                                    <option value="dev-ops">Dev-Ops</option>
+                                                    <option value="wp-customization">WP Customization</option>
+                                                    <option value="plugin-dev">Plugin Development</option>
+                                                    <option value="theme-dev">Theme Development</option>
+                                                    <option value="ml-engineer">Machine Learning</option>
                                                 </select>
                                             </div>
                                             <div class="modal-footer mt-3">
@@ -245,26 +274,28 @@ if ($stmt = $connection->prepare($sql)) {
                                         <th>Employee Name</th>
                                         <th>Designation</th>
                                         <th>Total Experience</th>
+                                        <th>Expert In</th>
                                         <th>Joining Date</th>
                                         <th>Field of Expertise</th>
                                         <th>Current Address</th>
                                         <th>Present Address</th>
-                                        <th>Employee Type</th>
+                                        <th>Hire Type</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($result as $row): ?>
                                         <tr>
                                             <td><?php echo $row['employeeID']; ?></td>
-                                            <td><img src="../auth/backend-assets/employee-photo/<?php echo $row['photo']; ?>" alt="Employee Photo" style="max-width: 100px; max-height: 100px;"></td>
+                                            <td><img src="../auth/backend-assets/employee-photo/<?php echo $row['photo']; ?>" alt="Employee Photo" style="width: 90px; height: 90px; object-fit: contain;"></td>
                                             <td><?php echo $row['employeeName']; ?></td>
                                             <td><?php echo $row['designation']; ?></td>
                                             <td><?php echo $row['totalExperience']; ?></td>
+                                            <td><?php echo $row['expertType']; ?></td>
                                             <td><?php echo $row['joiningDate']; ?></td>
                                             <td><?php echo $row['fieldOfExpertise']; ?></td>
                                             <td><?php echo $row['currentAddress']; ?></td>
                                             <td><?php echo $row['presentAddress']; ?></td>
-                                            <td><?php echo $row['employeeType']; ?></td>
+                                            <td><?php echo $row['hireType']; ?></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -280,7 +311,7 @@ if ($stmt = $connection->prepare($sql)) {
                                         
                         <footer class="footer mt-5">
                             <p class="mb-0">
-                                Copyright © <span>2024</span> Ecommerce . All Rights Reserved.
+                                Copyright © <span>2024</span> Lyzerslab . All Rights Reserved.
                             </p>
                         </footer>
                     </div>
@@ -308,7 +339,8 @@ if ($stmt = $connection->prepare($sql)) {
             var fieldOfExpertise = document.getElementById("fieldOfExpertise").value;
             var currentAddress = document.getElementById("currentAddress").value;
             var presentAddress = document.getElementById("presentAddress").value;
-            var employeeType = document.getElementById("employeeType").value;
+            var expertType = document.getElementById("expertType").value;
+            var hireType = document.getElementById("hireType").value;
 
             // Split skills input by comma and trim whitespace
             var skillsArray = fieldOfExpertise.split(",").map(function(skill) {
@@ -325,7 +357,8 @@ if ($stmt = $connection->prepare($sql)) {
             formData.append("skillsArray", JSON.stringify(skillsArray)); // Convert skills array to JSON string
             formData.append("currentAddress", currentAddress);
             formData.append("presentAddress", presentAddress);
-            formData.append("employeeType", employeeType);
+            formData.append("expertType", expertType);
+            formData.append("hireType", hireType);
 
             // Send form data to the server using fetch API
             fetch("../auth/backend-assets/submit_employee.php", {

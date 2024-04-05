@@ -11,7 +11,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $skillsArray = isset($_POST['skillsArray']) ? json_decode($_POST['skillsArray'], true) : [];
     $currentAddress = $_POST['currentAddress'];
     $presentAddress = $_POST['presentAddress'];
-    $employeeType = $_POST['employeeType'];
+    $expertType = $_POST['expertType'];
+    $hireType = $_POST['hireType'];
 
     // Upload photo file
     $targetDir = "./employee-photo/";
@@ -20,11 +21,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     if (move_uploaded_file($_FILES["employeePhoto"]["tmp_name"], $targetFile)) {
         // Insert data into the Employees table using prepared statement
-        $sql = "INSERT INTO employees (employeeName, photo, designation, totalExperience, joiningDate, fieldOfExpertise, currentAddress, presentAddress, employeeType)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO employees (employeeName, photo, designation, totalExperience, joiningDate, fieldOfExpertise, currentAddress, presentAddress, expertType, hireType)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $connection->prepare($sql);
         $skillsString = implode(', ', $skillsArray);
-        $stmt->execute([$employeeName, $employeePhoto, $employeeDesignation, $totalExperience, $joiningDate, $skillsString, $currentAddress, $presentAddress, $employeeType]);
+        $stmt->execute([$employeeName, $employeePhoto, $employeeDesignation, $totalExperience, $joiningDate, $skillsString, $currentAddress, $presentAddress, $expertType, $hireType]);
         echo "New record created successfully";
     } else {
         echo "Error uploading file";

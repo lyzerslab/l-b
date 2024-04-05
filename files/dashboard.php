@@ -87,14 +87,14 @@ if ($stmt = $connection->prepare($sql)) {
 
                         <li class="">
                             <a href="employees.php">
-                                <i class="fa-solid fa-gear"></i>
+                                <i class="fa-regular fa-user"></i>
                                 <span class="block">Employees</span>
                             </a>
                         </li>
 
                          <li>
                             <a href="projects.php">
-                                <i class="fa-solid fa-gear"></i>
+                                <i class="fa-solid fa-file"></i>
                                 <span class="block">Projects</span>
                             </a>
                         </li>
@@ -146,7 +146,13 @@ if ($stmt = $connection->prepare($sql)) {
 
                                     <div class="flex-col">
                                         <span class="block"><?php echo strtoupper(htmlspecialchars($_SESSION["username"])); ?></span>
-                                        <span class="block"> Super Admin</span>
+                                        <?php
+                                        if($isAdmin==1){
+                                            echo '<span class="block"> Super Admin</span>';
+                                        }else{
+                                            echo '<span class="block"> Admin </span>';
+                                        }
+                                        ?>
                                     </div>
                                 </div>
 
@@ -199,7 +205,7 @@ if ($stmt = $connection->prepare($sql)) {
                                 </div>
                                <?php
                                 // Assuming you have a PDO connection named $connection
-                                $query = "SELECT COUNT(*) AS total_entries FROM Formdata";
+                                $query = "SELECT COUNT(*) AS total_entries FROM formdata";
                                 $stmt = $connection->prepare($query);
                                 $stmt->execute();
 
@@ -223,7 +229,7 @@ if ($stmt = $connection->prepare($sql)) {
                 
                         <footer class="footer mt-5">
                             <p class="mb-0">
-                                Copyright © <span>2024</span> Ecommerce . All Rights Reserved.
+                                Copyright © <span>2024</span> Lyzerslab . All Rights Reserved.
                             </p>
                         </footer>
                     </div>

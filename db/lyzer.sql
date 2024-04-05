@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 03, 2024 at 08:25 AM
+-- Generation Time: Apr 05, 2024 at 11:23 AM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -43,7 +43,10 @@ INSERT INTO `access_logs` (`id`, `ip_address`, `access_time`, `blocked`) VALUES
 (102, '27.147.150.102', '2024-03-30 08:56:35', 0),
 (103, '27.147.150.102', '2024-03-30 08:57:25', 0),
 (104, '27.147.150.102', '2024-04-01 08:25:51', 0),
-(105, '27.147.150.102', '2024-04-01 08:55:46', 0);
+(105, '27.147.150.102', '2024-04-01 08:55:46', 0),
+(106, '127.0.0.1', '2024-04-05 08:19:54', 0),
+(107, '127.0.0.1', '2024-04-05 09:03:16', 0),
+(108, '127.0.0.1', '2024-04-05 09:22:47', 0);
 
 -- --------------------------------------------------------
 
@@ -66,8 +69,8 @@ CREATE TABLE `admin_users` (
 --
 
 INSERT INTO `admin_users` (`id`, `username`, `password`, `email`, `profile_photo`, `is_admin`, `date`) VALUES
-(0, 'rana', '$2y$10$RW2pSFacmGQdARoarTeEfeg5SiqZF3NLSxseNUOyC.SqBAI.wZkES', 'rana@gmail.com', 'super-admin/rana/pexels-tima-miroshnichenko-5439443.jpg', 0, '2024-02-15 10:01:16'),
-(21, 'zkrana', '$2y$10$kiRvG1wE418aRMjXZkCmuemut2iZLCOZTTZzMnglnZXLdLcyfTwAC', 'zkranao@gmail.com', 'super-admin/zkrana/handsome-man-with-laptop.jpg', 0, '2024-01-26 05:42:11');
+(0, 'rana', '$2y$10$RW2pSFacmGQdARoarTeEfeg5SiqZF3NLSxseNUOyC.SqBAI.wZkES', 'rana@gmail.com', 'super-admin/rana/pexels-tima-miroshnichenko-5439443.jpg', 1, '2024-04-05 08:56:33'),
+(21, 'zkrana', '$2y$10$kiRvG1wE418aRMjXZkCmuemut2iZLCOZTTZzMnglnZXLdLcyfTwAC', 'zkranao@gmail.com', 'super-admin/zkrana/handsome-man-with-laptop.jpg', 1, '2024-04-05 09:12:14');
 
 -- --------------------------------------------------------
 
@@ -105,16 +108,18 @@ CREATE TABLE `employees` (
   `fieldOfExpertise` text DEFAULT NULL,
   `currentAddress` varchar(255) DEFAULT NULL,
   `presentAddress` varchar(255) DEFAULT NULL,
-  `employeeType` varchar(50) DEFAULT NULL
+  `expertType` varchar(255) NOT NULL,
+  `hireType` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `employees`
 --
 
-INSERT INTO `employees` (`employeeID`, `employeeName`, `photo`, `designation`, `totalExperience`, `joiningDate`, `fieldOfExpertise`, `currentAddress`, `presentAddress`, `employeeType`) VALUES
-(4, 'Md. Tareq Monjur', 'pexels-mikhail-nilov-6930538.jpg', 'Senior Software Engineer', '10', '2024-01-25', 'Laravel, PHP, React, React Native', 'Feni', 'Feni', 'remote'),
-(5, 'Ziaul Kabir', 'handsome-man-with-laptop.jpg', 'CEO & Full-stack Developer', '3', '2023-12-12', 'PHP, My-Sql, React, Next.js, WordPress, Domain-Hosting', 'Dhaka', 'Dhaka', 'remote');
+INSERT INTO `employees` (`employeeID`, `employeeName`, `photo`, `designation`, `totalExperience`, `joiningDate`, `fieldOfExpertise`, `currentAddress`, `presentAddress`, `expertType`, `hireType`) VALUES
+(4, 'Md. Tareq Monjur', 'pexels-mikhail-nilov-6930538.jpg', 'Senior Software Engineer', '10', '2024-01-25', 'Laravel, PHP, React, React Native', 'Feni', 'Feni', '', 'remote'),
+(5, 'Ziaul Kabir', 'handsome-man-with-laptop.jpg', 'CEO & Full-stack Developer', '3', '2023-12-12', 'PHP, My-Sql, React, Next.js, WordPress, Domain-Hosting', 'Dhaka', 'Dhaka', '', 'remote'),
+(6, 'Md. Sabuj Ahmed', 'pexels-j-sarkar-991509.jpg', 'Senior UI/UX Engineer', '6', '2024-02-20', 'Figma, XD, Photoshop, Illustrator', 'Dhaka', 'Dhaka', 'ui/ux', 'remote');
 
 -- --------------------------------------------------------
 
@@ -184,13 +189,6 @@ CREATE TABLE `subscribers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `subscribers`
---
-
-INSERT INTO `subscribers` (`id`, `email`, `created_at`) VALUES
-(31, 'zkranao@gmail.com', '2024-03-29 09:13:21');
-
---
 -- Indexes for dumped tables
 --
 
@@ -245,7 +243,7 @@ ALTER TABLE `subscribers`
 -- AUTO_INCREMENT for table `access_logs`
 --
 ALTER TABLE `access_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=106;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=109;
 
 --
 -- AUTO_INCREMENT for table `blocked_ips`
@@ -257,7 +255,7 @@ ALTER TABLE `blocked_ips`
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
-  MODIFY `employeeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `employeeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `formdata`
