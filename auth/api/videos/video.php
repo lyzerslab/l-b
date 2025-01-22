@@ -3,7 +3,7 @@
 require_once '../../db-connection/cors.php';
 require_once '../../db-connection/config.php';
 
-header("Access-Control-Allow-Origin: *");  // Or specify the exact allowed domains
+header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
@@ -15,38 +15,38 @@ function respond($status, $data) {
     exit();
 }
 
-function downloadVideo($url, $savePath) {
-    $ch = curl_init($url);
-    $fp = fopen($savePath, 'w+');
-    curl_setopt($ch, CURLOPT_FILE, $fp);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-    curl_exec($ch);
-    $error = curl_error($ch);
-    curl_close($ch);
-    fclose($fp);
-    if ($error) {
-        throw new Exception("Curl error: $error");
-    }
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        $rawData = file_get_contents("php://input");
-        $body = json_decode($rawData, true);
-
-        if (!isset($body['url'])) {
-            respond(400, ["error" => "Video URL is required"]);
+        // Check if the video file is set in the request
+        if (!isset($_FILES['video'])) {
+            respond(400, ["error" => "Video file is required"]);
         }
 
-        $videoUrl = $body['url'];
+        // Get the video file
+        $video = $_FILES['video'];
+
+        // Check if the file is valid (no error and correct MIME type)
+        if ($video['error'] !== UPLOAD_ERR_OK) {
+            respond(400, ["error" => "Failed to upload video"]);
+        }
+
+        $videoMimeType = mime_content_type($video['tmp_name']);
+        if ($videoMimeType !== 'video/webm') {
+            respond(400, ["error" => "Only WebM videos are allowed"]);
+        }
+
+        // Generate a unique ID for the video
         $id = uniqid();
         $filename = $id . '.webm';
         $zipFilename = $id . '.zip';
 
-        // Download the video
+        // Set the file path to save the video
         $videoPath = __DIR__ . '/uploads/' . $filename;
-        downloadVideo($videoUrl, $videoPath);
+
+        // Move the uploaded video to the 'uploads' directory
+        if (!move_uploaded_file($video['tmp_name'], $videoPath)) {
+            respond(500, ["error" => "Failed to save video file"]);
+        }
 
         // Create a ZIP file
         $zipPath = __DIR__ . '/uploads/' . $zipFilename;
@@ -57,16 +57,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $zip->addFile($videoPath, $filename);
         $zip->close();
 
-        // Save to database
+        // Save video data to the database
         $db = getDatabaseConnection();
         $stmt = $db->prepare("INSERT INTO videos (id, filename, zip_filename) VALUES (?, ?, ?)");
         $stmt->execute([$id, $filename, $zipFilename]);
 
-        // Generate a shareable link
+        // Generate the shareable link
         $baseUrl = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'];
         $shareLink = $baseUrl . '/share/' . $id;
 
         respond(201, ["id" => $id, "link" => $shareLink]);
+
     } catch (Exception $e) {
         error_log("Error: " . $e->getMessage());
         respond(500, ["error" => "Server error occurred"]);
@@ -96,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Content-Disposition: attachment; filename="' . basename($zipPath) . '"');
         readfile($zipPath);
         exit();
+
     } catch (Exception $e) {
         error_log("Error: " . $e->getMessage());
         respond(500, ["error" => "Server error occurred"]);
