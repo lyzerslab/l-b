@@ -1,8 +1,8 @@
 <?php
 
 require_once '../../db-connection/cors.php';
+// Ensure this is included at the top of your PHP file
 require_once '../../db-connection/config.php';
-
 
 header("Content-Type: application/json");
 
@@ -32,9 +32,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             respond(400, ["error" => "Failed to upload video"]);
         }
 
-        $allowedExtensions = ['webm'];
-        $fileExtension = pathinfo($video['name'], PATHINFO_EXTENSION);
-        if (!in_array(strtolower($fileExtension), $allowedExtensions)) {
+        // Log the MIME type to see what the server is receiving
+        $videoMimeType = mime_content_type($video['tmp_name']);
+        error_log("Uploaded video MIME type: " . $videoMimeType);
+
+        // Validate the MIME type is correct for webm videos
+        if ($videoMimeType !== 'video/webm') {
             respond(400, ["error" => "Only WebM videos are allowed"]);
         }
 
