@@ -3,9 +3,6 @@
 require_once '../../db-connection/cors.php';
 require_once '../../db-connection/config.php';
 
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
 header("Content-Type: application/json");
 
@@ -35,8 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             respond(400, ["error" => "Failed to upload video"]);
         }
 
-        $videoMimeType = mime_content_type($video['tmp_name']);
-        if ($videoMimeType !== 'video/webm') {
+        $allowedExtensions = ['webm'];
+        $fileExtension = pathinfo($video['name'], PATHINFO_EXTENSION);
+        if (!in_array(strtolower($fileExtension), $allowedExtensions)) {
             respond(400, ["error" => "Only WebM videos are allowed"]);
         }
 

@@ -1,6 +1,6 @@
 <?php
 // Allow requests from any origin
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: https://lyzerslab.com');
 
 // Allow the following HTTP methods
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
