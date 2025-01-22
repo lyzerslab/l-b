@@ -1,21 +1,32 @@
 <?php
 
-// Call API header
 require_once '../../db-connection/cors.php';
-
-// Connect to the database
 require_once '../../db-connection/config.php';
 
-
 header("Content-Type: application/json");
+
 function respond($status, $data) {
     http_response_code($status);
     echo json_encode($data);
     exit();
 }
 
+function downloadVideo($url, $savePath) {
+    $ch = curl_init($url);
+    $fp = fopen($savePath, 'w+');
+    curl_setopt($ch, CURLOPT_FILE, $fp);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+    curl_exec($ch);
+    $error = curl_error($ch);
+    curl_close($ch);
+    fclose($fp);
+    if ($error) {
+        throw new Exception("Curl error: $error");
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Handle video upload and save
     try {
         $rawData = file_get_contents("php://input");
         $body = json_decode($rawData, true);
@@ -29,17 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $filename = $id . '.webm';
         $zipFilename = $id . '.zip';
 
-        // Download the video from the given URL
-        $videoData = file_get_contents($videoUrl);
-        if ($videoData === false) {
-            respond(500, ["error" => "Failed to download video"]);
-        }
-
-        // Save the video to a temporary file
+        // Download the video
         $videoPath = __DIR__ . '/uploads/' . $filename;
-        file_put_contents($videoPath, $videoData);
+        downloadVideo($videoUrl, $videoPath);
 
-        // Create a ZIP file containing the video
+        // Create a ZIP file
         $zipPath = __DIR__ . '/uploads/' . $zipFilename;
         $zip = new ZipArchive();
         if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
@@ -48,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $zip->addFile($videoPath, $filename);
         $zip->close();
 
-        // Save metadata to the database
+        // Save to database
         $db = getDatabaseConnection();
         $stmt = $db->prepare("INSERT INTO videos (id, filename, zip_filename) VALUES (?, ?, ?)");
         $stmt->execute([$id, $filename, $zipFilename]);
@@ -63,7 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         respond(500, ["error" => "Server error occurred"]);
     }
 } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Retrieve video ZIP by ID
     try {
         if (!isset($_GET['id'])) {
             respond(400, ["error" => "Video ID is required"]);
@@ -84,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             respond(404, ["error" => "ZIP file not found"]);
         }
 
-        // Serve the ZIP file
         header('Content-Type: application/zip');
         header('Content-Disposition: attachment; filename="' . basename($zipPath) . '"');
         readfile($zipPath);
