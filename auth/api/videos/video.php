@@ -1,7 +1,6 @@
 <?php
 
 require_once '../../db-connection/cors.php';
-// Ensure this is included at the top of your PHP file
 require_once '../../db-connection/config.php';
 
 header("Content-Type: application/json");
@@ -11,7 +10,6 @@ function respond($status, $data) {
     echo json_encode($data);
     exit();
 }
-
 
 $uploadsDir = __DIR__ . '/uploads/';
 if (!is_dir($uploadsDir)) {
@@ -28,17 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Get the video file
         $video = $_FILES['video'];
 
-        // Check if the file is valid (no error and correct MIME type)
+        // Check if the file is valid (no error)
         if ($video['error'] !== UPLOAD_ERR_OK) {
             respond(400, ["error" => "Failed to upload video"]);
         }
 
-        // Log the MIME type to see what the server is receiving
-        $videoMimeType = mime_content_type($video['tmp_name']);
-        error_log("Uploaded video MIME type: " . $videoMimeType);
-
-        // Validate the MIME type is correct for webm videos
-        if ($videoMimeType !== 'video/webm') {
+        // Validate file extension (check if it's a .webm file)
+        $fileExtension = strtolower(pathinfo($video['name'], PATHINFO_EXTENSION));
+        if ($fileExtension !== 'webm') {
             respond(400, ["error" => "Only WebM videos are allowed"]);
         }
 
