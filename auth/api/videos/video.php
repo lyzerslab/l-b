@@ -3,6 +3,10 @@
 require_once '../../db-connection/cors.php';
 require_once '../../db-connection/config.php';
 
+header("Access-Control-Allow-Origin: *");  // Or specify the exact allowed domains
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
 header("Content-Type: application/json");
 
 function respond($status, $data) {
