@@ -21,4 +21,10 @@ catch(PDOException $e)
     die("Connection failed: " . $e->getMessage());
 }
 
+// Function to get the database connection
+function getDatabaseConnection() {
+    global $connection;
+    return $connection;
+}
+
 ?>
