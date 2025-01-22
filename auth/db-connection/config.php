@@ -4,9 +4,9 @@
 
 $config = array(
     'db_hostname' => 'localhost',
-    'db_name' => 'lyzer',
-    'db_username' => 'root',
-    'db_password' => '',
+    'db_name' => 'aeshuvoi_lyzerDash',
+    'db_username' => 'aeshuvoi_lyzerDU',
+    'db_password' => ',PDoJ~F&gy-A',
 );
 
 try 
