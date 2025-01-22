@@ -12,6 +12,7 @@ function respond($status, $data) {
     exit();
 }
 
+
 $uploadsDir = __DIR__ . '/uploads/';
 if (!is_dir($uploadsDir)) {
     mkdir($uploadsDir, 0777, true);  // Ensure the uploads directory exists
