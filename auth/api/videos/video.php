@@ -15,6 +15,11 @@ function respond($status, $data) {
     exit();
 }
 
+$uploadsDir = __DIR__ . '/uploads/';
+if (!is_dir($uploadsDir)) {
+    mkdir($uploadsDir, 0777, true);  // Ensure the uploads directory exists
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Check if the video file is set in the request
@@ -36,12 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Generate a unique ID for the video
-        $id = uniqid();
+        $id = bin2hex(random_bytes(16)); // More secure random ID
         $filename = $id . '.webm';
         $zipFilename = $id . '.zip';
 
         // Set the file path to save the video
-        $videoPath = __DIR__ . '/uploads/' . $filename;
+        $videoPath = $uploadsDir . $filename;
 
         // Move the uploaded video to the 'uploads' directory
         if (!move_uploaded_file($video['tmp_name'], $videoPath)) {
@@ -49,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Create a ZIP file
-        $zipPath = __DIR__ . '/uploads/' . $zipFilename;
+        $zipPath = $uploadsDir . $zipFilename;
         $zip = new ZipArchive();
         if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
             respond(500, ["error" => "Failed to create ZIP file"]);
@@ -88,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             respond(404, ["error" => "Video not found"]);
         }
 
-        $zipPath = __DIR__ . '/uploads/' . $video['zip_filename'];
+        $zipPath = $uploadsDir . $video['zip_filename'];
         if (!file_exists($zipPath)) {
             respond(404, ["error" => "ZIP file not found"]);
         }
