@@ -42,12 +42,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $filename = $id . '.webm';
         $zipFilename = $id . '.zip';
 
-        // Set the file path to save the video
+        // Set the file path to save the video temporarily
         $videoPath = $uploadsDir . $filename;
 
-        // Move the uploaded video to the 'uploads' directory
+        // Move the uploaded video to a temporary location
         if (!move_uploaded_file($video['tmp_name'], $videoPath)) {
-            respond(500, ["error" => "Failed to save video file"]);
+            respond(500, ["error" => "Failed to save video file temporarily"]);
         }
 
         // Create a ZIP file
@@ -59,7 +59,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $zip->addFile($videoPath, $filename);
         $zip->close();
 
-        // Save video data to the database
+        // After creating the ZIP, remove the original .webm file to save space
+        unlink($videoPath);
+
+        // Save video data to the database with only the ZIP file reference
         $db = getDatabaseConnection();
         $stmt = $db->prepare("INSERT INTO videos (id, filename, zip_filename) VALUES (?, ?, ?)");
         $stmt->execute([$id, $filename, $zipFilename]);
