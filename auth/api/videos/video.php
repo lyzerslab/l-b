@@ -93,15 +93,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             respond(404, ["error" => "Video not found"]);
         }
 
-        $zipPath = $uploadsDir . $video['zip_filename'];
-        if (!file_exists($zipPath)) {
-            respond(404, ["error" => "ZIP file not found"]);
-        }
+        // Generate the URL to the ZIP file (if it's stored under the 'uploads' folder)
+        $zipUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/uploads/' . $video['zip_filename'];
 
-        header('Content-Type: application/zip');
-        header('Content-Disposition: attachment; filename="' . basename($zipPath) . '"');
-        readfile($zipPath);
-        exit();
+        // Respond with the metadata (including the video URL)
+        respond(200, ["id" => $id, "zip_url" => $zipUrl]);
 
     } catch (Exception $e) {
         error_log("Error: " . $e->getMessage());
