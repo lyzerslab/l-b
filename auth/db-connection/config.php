@@ -3,7 +3,7 @@
 //Database connection config
 
 $config = array(
-    'db_hostname' => 'localhost',
+    'db_hostname' => '127.0.0.1',
     'db_name' => 'aeshuvoi_lyzerDash',
     'db_username' => 'aeshuvoi_lyzerDU',
     'db_password' => ',PDoJ~F&gy-A',

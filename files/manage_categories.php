@@ -2,7 +2,7 @@
 // Initialize the session
 session_start();
 
-// Check if the user is logged in, if not then redirect him to the login page
+// Check if the user is logged in, if not then redirect to the login page
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: ../../../index.php");
     exit;
@@ -11,34 +11,15 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 // Include config file
 require_once "../auth/db-connection/config.php";
 
-// Fetch additional user information from the database using the user ID
-$userId = $_SESSION["id"];
-$sql = "SELECT profile_photo FROM admin_users WHERE id = :userId";
-
-if ($stmt = $connection->prepare($sql)) {
-    $stmt->bindParam(":userId", $userId, PDO::PARAM_INT);
-
-    if ($stmt->execute()) {
-        $stmt->bindColumn("profile_photo", $profilePhoto);
-        if ($stmt->fetch()) {
-            // User profile photo found, update the session
-            $_SESSION["profile_photo"] = $profilePhoto;
-        } else {
-            // User not found or profile photo not set, you can handle this case
-        }
-    } else {
-        echo "Oops! Something went wrong. Please try again later.";
-    }
-
-    unset($stmt); // Close statement
-}
+// Fetch all categories
+$sql = "SELECT * FROM categories ORDER BY created_at DESC";
+$categories = $connection->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashbaord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +30,10 @@ if ($stmt = $connection->prepare($sql)) {
 
     <script src="../files/js/main.js"></script>
 </head>
-<body style="background:#f7f7f7;">
+<body>
+
+
+<body style="background: #f7f7f7;">
     <main>
         <div class="app-wrapper">
             <div class="app-sidebar">
@@ -113,6 +97,8 @@ if ($stmt = $connection->prepare($sql)) {
                     </ul>
                 </div>
             </div>
+
+            <!-- Header and Main Content -->
             <div class="header-body">
                 <div class="app-sidebar-mb">
                     <div class="nav-mb-icon">
@@ -178,114 +164,59 @@ if ($stmt = $connection->prepare($sql)) {
                         </div>
                     </div>
                 </div>
+
                 <div class="h-container">
-                    <div class="main">
-                        <h1 class="page-heading"> Dashboard </h1>
-                        <!-- Statistics -->
-                        <div class="sales-small-stats">
-                            <div class="sales-small-stats-inner">
-                                <div class="icon">
-                                    <div class="doller">
-                                        <i class="fa-solid fa-envelope"></i>
-                                    </div>
-                                </div>
-                               <?php
-                                // Assuming you have a PDO connection named $connection
-                                $query = "SELECT COUNT(*) AS total_subscribers FROM subscribers";
-                                $stmt = $connection->prepare($query);
-                                $stmt->execute();
+                    <div class="container mt-5">
+                        <h1 class="page-heading">Manage Categories</h1>
 
-                                // Check if the query was successful
-                                if ($stmt && $stmt->rowCount() > 0) {
-                                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-                                    $totalSubscribers = $result['total_subscribers'];
-                                } else {
-                                    $totalSubscribers = 0;
-                                }
-                                ?>
-
-                                <div class="stats-d">
-                                    <span class="block sub-title">Total Subscribers</span>
-                                    <span class="block satts-number"><?php echo $totalSubscribers; ?></span>
-                                </div>
-                            </div>   
-                            
-                            <div class="sales-small-stats-inner">
-                                <div class="icon color-g">
-                                    <div class="doller">
-                                        <i class="fa-solid fa-address-book"></i>
-                                    </div>
-                                </div>
-                               <?php
-                                // Assuming you have a PDO connection named $connection
-                                $query = "SELECT COUNT(*) AS total_entries FROM formdata";
-                                $stmt = $connection->prepare($query);
-                                $stmt->execute();
-
-                                // Check if the query was successful
-                                if ($stmt && $stmt->rowCount() > 0) {
-                                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-                                    $totalEntries = $result['total_entries'];
-                                } else {
-                                    $totalEntries = 0;
-                                }
-                                ?>
-
-                                <div class="stats-d">
-                                    <span class="block sub-title">Total Form Entries</span>
-                                    <span class="block satts-number"><?php echo $totalEntries; ?></span>
-                                </div>
-                            </div>   
+                        <!-- Add New Post Button -->
+                        <div class="mb-3 text-end">
+                            <a href="add_category.php" class="btn btn-success">
+                                <i class="fa-solid fa-plus"></i> Add New Category
+                            </a>
                         </div>
-
-
-                
-                        <footer class="footer mt-5">
-                            <p class="mb-0">
-                                Copyright © <span>2024</span> Lyzerslab . All Rights Reserved.
-                            </p>
-                        </footer>
+                        <!-- Categories Table -->
+                        <div class="table-responsive">
+                            <h2>Categories List</h2>
+                            <table class="table table-bordered table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Created At</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($categories)) : ?>
+                                        <?php foreach ($categories as $category) : ?>
+                                            <tr>
+                                                <td><?php echo $category['id']; ?></td>
+                                                <td><?php echo htmlspecialchars($category['name']); ?></td>
+                                                <td><?php echo htmlspecialchars($category['description']); ?></td>
+                                                <td><?php echo date('Y-m-d', strtotime($category['created_at'])); ?></td>
+                                                <td>
+                                                    <a href="edit_category.php?id=<?php echo $category['id']; ?>" class="btn btn-primary btn-sm">Edit</a>
+                                                    <a href="delete_category.php?id=<?php echo $category['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this category?');">Delete</a>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else : ?>
+                                        <tr>
+                                            <td colspan="5" class="text-center">No categories found.</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
+            
         </div>
     </main>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
-
-    <script src="../files/js/userchart.js"></script>
-
-    <!-- Notifications -->
-    <script>
-        // Get references to the notifications icon and menu
-        const notificationsIcon = document.getElementById('notificationsDropdown');
-        const notificationsMenu = document.getElementById('notificationsMenu');
-
-        // Add a click event listener to the notifications icon
-        notificationsIcon.addEventListener('click', function() {
-            // Toggle the display of the notifications menu
-            if (notificationsMenu.style.display === 'none') {
-                notificationsMenu.style.display = 'block';
-            } else {
-                notificationsMenu.style.display = 'none';
-            }
-        });
-    </script>
-    <script>
-            // script.js
-        document.addEventListener('DOMContentLoaded', function () {
-            const wrapperIcon = document.querySelector('.app-sidebar-mb');
-            const appWrapperS = document.querySelector('.app-wrapper');
-            const deskNav =  document.getElementById("des-nav");
-
-        wrapperIcon.addEventListener('click', function () {
-                appWrapperS.classList.toggle('show-sidebar');
-            });
-        deskNav.addEventListener('click', function () {
-                appWrapperS.classList.remove('show-sidebar');
-            });
-        });
-    </script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
