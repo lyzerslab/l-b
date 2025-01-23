@@ -1125,3 +1125,20 @@ Projects
   max-height: 300px;
   overflow-y: scroll;
 }
+
+
+/*
+============
+Blog
+============
+*/
+/* Sidebar Dropdown Styling */
+.sidebard-nav ul li.dropdown > ul.dropdown-menu {
+  display: none; /* Hide dropdown by default */
+  list-style: none;
+  padding-left: 20px;
+}
+
+.sidebard-nav ul li.dropdown:hover > ul.dropdown-menu {
+  display: block; /* Show dropdown on hover */
+}
