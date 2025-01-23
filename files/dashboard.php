@@ -106,9 +106,9 @@ if ($stmt = $connection->prepare($sql)) {
                                 <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a href="manage_posts.php"><i class="fa-solid fa-list"></i> Manage Posts</a></li>
-                                <li><a href="add_post.php"><i class="fa-solid fa-plus"></i> Add New Post</a></li>
-                                <li><a href="manage_categories.php"><i class="fa-solid fa-tags"></i> Manage Categories</a></li>
+                                <li><a href="blog/manage_posts.php"><i class="fa-solid fa-list"></i> Manage Posts</a></li>
+                                <li><a href="blog/add_post.php"><i class="fa-solid fa-plus"></i> Add New Post</a></li>
+                                <li><a href="blog/manage_categories.php"><i class="fa-solid fa-tags"></i> Manage Categories</a></li>
                             </ul>
                         </li>
                     </ul>
