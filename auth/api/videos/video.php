@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Generate the URL to the ZIP file (if it's stored under the 'uploads' folder)
-        $zipUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/uploads/' . $video['zip_filename'];
+        $zipUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/auth/api/videos/uploads/' . $video['zip_filename'];
 
         // Respond with the metadata (including the video URL)
         respond(200, ["id" => $id, "zip_url" => $zipUrl]);
