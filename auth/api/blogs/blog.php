@@ -6,8 +6,11 @@ require_once '../../db-connection/config.php';
 // Set content type to JSON
 header('Content-Type: application/json');
 
-// Initialize an empty array for blog posts
-$blogs = array();
+// Initialize response array
+$response = [
+    'status' => '',
+    'data' => []
+];
 
 // Check if the request method is GET
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
@@ -18,35 +21,60 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit;
 }
 
-// Fetch blogs from the database
-$sql = "SELECT b.id, b.title, b.slug, b.content, b.status, b.created_at, u.username AS author, c.name AS category, 
-       IFNULL(GROUP_CONCAT(DISTINCT bt.tag ORDER BY bt.tag ASC), '') AS tags
-FROM blogs b
-LEFT JOIN categories c ON b.category_id = c.id
-LEFT JOIN blog_tags bt ON b.id = bt.blog_id  -- This links the blogs to the tags based on blog_id
-LEFT JOIN admin_users u ON b.author_id = u.id
-GROUP BY b.id
-ORDER BY b.created_at DESC;";
-
-$stmt = $connection->prepare($sql);
-
 try {
-    $stmt->execute();
-    $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // SQL query to fetch blogs with related tags, authors, and categories
+    $sql = "
+        SELECT 
+            b.id, 
+            b.title, 
+            b.slug, 
+            b.content, 
+            b.status, 
+            b.created_at, 
+            u.username AS author, 
+            c.name AS category, 
+            IFNULL(GROUP_CONCAT(DISTINCT bt.tag ORDER BY bt.tag ASC), '') AS tags
+        FROM blogs b
+        LEFT JOIN categories c ON b.category_id = c.id
+        LEFT JOIN blog_tags bt ON b.id = bt.blog_id
+        LEFT JOIN admin_users u ON b.author_id = u.id
+        GROUP BY b.id
+        ORDER BY b.created_at DESC;
+    ";
 
-    // If posts are found, add them to the response array
-    if ($posts) {
-        $blogs['status'] = 'success';
-        $blogs['data'] = $posts;
+    $stmt = $connection->prepare($sql);
+    $stmt->execute();
+
+    // Fetch results
+    $blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if ($blogs) {
+        // Format and send response
+        $response['status'] = 'success';
+        $response['data'] = array_map(function ($blog) {
+            return [
+                'id' => (int) $blog['id'],
+                'title' => $blog['title'],
+                'slug' => $blog['slug'],
+                'content' => $blog['content'],
+                'status' => $blog['status'],
+                'created_at' => $blog['created_at'],
+                'author' => $blog['author'],
+                'category' => $blog['category'],
+                'tags' => array_filter(explode(',', $blog['tags'])) // Convert tags into an array
+            ];
+        }, $blogs);
     } else {
-        $blogs['status'] = 'error';
-        $blogs['message'] = 'No blogs found.';
+        $response['status'] = 'error';
+        $response['message'] = 'No blogs found.';
     }
 } catch (PDOException $e) {
-    // Catch any errors during the query execution
-    $blogs['status'] = 'error';
-    $blogs['message'] = 'Database query failed: ' . $e->getMessage();
+    // Handle database errors
+    $response['status'] = 'error';
+    $response['message'] = 'Database query failed: ' . $e->getMessage();
 }
-// Return the response as JSON
-echo json_encode($blogs);
+
+// Output response in JSON
+echo json_encode($response);
+
 ?>
