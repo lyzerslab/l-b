@@ -1,14 +1,6 @@
 <?php
 
-// Allow requests from any origin
-header('Access-Control-Allow-Origin: https://lyzerslab.com');
-
-// Allow the following HTTP methods
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
-
-// Allow the following headers
-header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept');
-
+require_once '../../db-connection/cors.php';
 require_once '../../db-connection/config.php';
 
 // Set content type to JSON
@@ -27,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 // Fetch blogs from the database
-$sql = "SELECT b.id, b.title, b.slug, b.content, b.status, b.created_at, c.name as category, GROUP_CONCAT(bt.tag) AS tags
+$sql = "SELECT b.id, b.title, b.slug, b.content, b.status, b.created_at, b.author, c.name as category, GROUP_CONCAT(bt.tag) AS tags
         FROM blogs b
         LEFT JOIN categories c ON b.category_id = c.id
         LEFT JOIN blog_tags bt ON b.id = bt.blog_id
