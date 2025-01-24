@@ -1,6 +1,14 @@
 <?php
 
-require_once '../../db-connection/cors.php';
+// Allow requests from any origin
+header('Access-Control-Allow-Origin: https://lyzerslab.com');
+
+// Allow the following HTTP methods
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
+
+// Allow the following headers
+header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept');
+
 require_once '../../db-connection/config.php';
 
 // Set content type to JSON
