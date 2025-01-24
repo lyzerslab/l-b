@@ -26,7 +26,7 @@ $sql = "SELECT b.id, b.title, b.slug, b.content, b.status, b.created_at,
         FROM blogs b
         LEFT JOIN categories c ON b.category_id = c.id
         LEFT JOIN blog_tags bt ON b.id = bt.blog_id
-        LEFT JOIN admin_users u ON b.author = u.id  -- Assuming 'author' is the ID of the user in the blogs table
+        LEFT JOIN admin_users u ON b.author_id = u.id  -- Assuming 'author' is the ID of the user in the blogs table
         GROUP BY b.id
         ORDER BY b.created_at DESC";
 
