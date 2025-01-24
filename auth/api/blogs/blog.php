@@ -50,9 +50,6 @@ try {
 
     $blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Debugging: Log the result directly before any processing
-    var_dump($blogs);
-
     // Debugging: Log the raw query result to check if the data is fetched correctly
     error_log("Fetched blogs: " . print_r($blogs, true));
 
@@ -60,28 +57,34 @@ try {
         // Format and send response
         $response['status'] = 'success';
         
+        // Log the fetched data before processing
+        error_log("Fetched blogs data: " . json_encode($blogs));
+
         // Process the blogs and tags
         $response['data'] = array_map(function ($blog) {
-            // Log each blog to check if the data is correct
+            // Debugging: Log the current blog being processed
             error_log("Processing blog: " . print_r($blog, true));
-        
-            // Clean up the slug and return the response
-            $cleanSlug = str_replace(":", "-", $blog['slug']);
-            $cleanSlug = preg_replace('/-+/', '-', $cleanSlug);
-        
+
+            // Clean up the slug to replace `:` with `-` if needed, and avoid double hyphen
+            $cleanSlug = str_replace(":", "-", $blog['slug']);  // Replace colon with hyphen
+            $cleanSlug = preg_replace('/-+/', '-', $cleanSlug); // Remove any consecutive hyphens
+
+            // Return cleaned-up blog data
             return [
                 'id' => (int) $blog['id'],
                 'title' => $blog['title'],
-                'slug' => $cleanSlug,
+                'slug' => $cleanSlug,  // Cleaned slug with single hyphen
                 'content' => $blog['content'],
                 'status' => $blog['status'],
                 'created_at' => $blog['created_at'],
                 'author' => $blog['author'],
                 'category' => $blog['category'],
-                'tags' => $blog['tags'] ? array_filter(explode(',', $blog['tags'])) : []
+                'tags' => $blog['tags'] ? array_filter(explode(',', $blog['tags'])) : []  // Convert tags into an array, or empty if none
             ];
         }, $blogs);
-        
+
+        // Debugging: Log the final data being sent in the response
+        error_log("Final response data: " . json_encode($response['data']));
     } else {
         $response['status'] = 'error';
         $response['message'] = 'No blogs found.';
