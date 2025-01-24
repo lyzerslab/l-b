@@ -22,11 +22,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 $sql = "SELECT b.id, b.title, b.slug, b.content, b.status, b.created_at, 
                u.username AS author,  
                c.name as category, 
-               GROUP_CONCAT(DISTINCT bt.tag ORDER BY bt.tag ASC) AS tags  -- Added ORDER BY to ensure proper tag sorting
+               GROUP_CONCAT(DISTINCT bt.tag ORDER BY bt.tag ASC) AS tags
         FROM blogs b
         LEFT JOIN categories c ON b.category_id = c.id
         LEFT JOIN blog_tags bt ON b.id = bt.blog_id
-        LEFT JOIN admin_users u ON b.author_id = u.id  
+        LEFT JOIN admin_users u ON b.author_id = u.id  -- Ensure 'author_id' matches the column in blogs table
         GROUP BY b.id
         ORDER BY b.created_at DESC";
 
