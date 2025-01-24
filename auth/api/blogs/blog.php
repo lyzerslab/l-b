@@ -48,8 +48,10 @@ try {
     $stmt = $connection->prepare($sql);
     $stmt->execute();
 
-    // Fetch results
     $blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Debugging: Log the result directly before any processing
+    var_dump($blogs);
 
     // Debugging: Log the raw query result to check if the data is fetched correctly
     error_log("Fetched blogs: " . print_r($blogs, true));
