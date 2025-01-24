@@ -63,13 +63,14 @@ try {
             // Debugging: Log the current blog being processed
             error_log("Processing blog: " . print_r($blog, true));
 
-            // Clean up the slug to replace `:` with `-` if needed
-            $cleanSlug = str_replace(":", "-", $blog['slug']);
+            // Clean up the slug to replace `:` with `-` if needed, and avoid double hyphen
+            $cleanSlug = str_replace(":", "-", $blog['slug']);  // Replace colon with hyphen
+            $cleanSlug = preg_replace('/-+/', '-', $cleanSlug); // Remove any consecutive hyphens
 
             return [
                 'id' => (int) $blog['id'],
                 'title' => $blog['title'],
-                'slug' => $cleanSlug,  // Cleaned slug
+                'slug' => $cleanSlug,  // Cleaned slug with single hyphen
                 'content' => $blog['content'],
                 'status' => $blog['status'],
                 'created_at' => $blog['created_at'],
