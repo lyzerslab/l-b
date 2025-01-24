@@ -24,29 +24,32 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 try {
     // SQL query to fetch blogs with related tags, authors, and categories
     $sql = "
-    SELECT 
-        b.id, 
-        b.title, 
-        b.slug, 
-        b.content, 
-        b.status, 
-        b.created_at, 
-        u.username AS author, 
-        c.name AS category, 
-        IFNULL(GROUP_CONCAT(DISTINCT bt.tag ORDER BY bt.tag ASC), '') AS tags
-    FROM blogs b
-    LEFT JOIN categories c ON b.category_id = c.id
-    LEFT JOIN blog_tags bt ON b.id = bt.blog_id
-    LEFT JOIN admin_users u ON b.author_id = u.id
-    GROUP BY b.id
-    ORDER BY b.created_at DESC;
-";
+        SELECT 
+            b.id, 
+            b.title, 
+            b.slug, 
+            b.content, 
+            b.status, 
+            b.created_at, 
+            u.username AS author, 
+            c.name AS category, 
+            IFNULL(GROUP_CONCAT(DISTINCT bt.tag ORDER BY bt.tag ASC), '') AS tags
+        FROM blogs b
+        LEFT JOIN categories c ON b.category_id = c.id
+        LEFT JOIN blog_tags bt ON b.id = bt.blog_id
+        LEFT JOIN admin_users u ON b.author_id = u.id
+        GROUP BY b.id
+        ORDER BY b.created_at DESC;
+    ";
 
     $stmt = $connection->prepare($sql);
     $stmt->execute();
 
     // Fetch results
     $blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Log the SQL result to verify the fetched data
+    error_log(print_r($blogs, true));  // Debugging the result
 
     if ($blogs) {
         // Format and send response
@@ -61,8 +64,7 @@ try {
                 'created_at' => $blog['created_at'],
                 'author' => $blog['author'],
                 'category' => $blog['category'],
-                // Explode tags into an array and handle empty/null
-                'tags' => $blog['tags'] ? array_filter(explode(',', $blog['tags'])) : [] 
+                'tags' => $blog['tags'] ? array_filter(explode(',', $blog['tags'])) : []  // Convert tags into an array
             ];
         }, $blogs);
     } else {
