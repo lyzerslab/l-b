@@ -49,7 +49,6 @@ try {
     $blogs['status'] = 'error';
     $blogs['message'] = 'Database query failed: ' . $e->getMessage();
 }
-
 // Return the response as JSON
 echo json_encode($blogs);
 ?>
