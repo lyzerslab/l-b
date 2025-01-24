@@ -20,13 +20,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 // Fetch blogs from the database
 $sql = "SELECT b.id, b.title, b.slug, b.content, b.status, b.created_at, 
-               u.username AS author,  -- Join admin_users table to get the author's username
+               u.username AS author,  
                c.name as category, 
-               GROUP_CONCAT(bt.tag) AS tags
+               GROUP_CONCAT(DISTINCT bt.tag ORDER BY bt.tag ASC) AS tags  -- Added ORDER BY to ensure proper tag sorting
         FROM blogs b
         LEFT JOIN categories c ON b.category_id = c.id
         LEFT JOIN blog_tags bt ON b.id = bt.blog_id
-        LEFT JOIN admin_users u ON b.author_id = u.id  -- Assuming 'author' is the ID of the user in the blogs table
+        LEFT JOIN admin_users u ON b.author_id = u.id  
         GROUP BY b.id
         ORDER BY b.created_at DESC";
 
