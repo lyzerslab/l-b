@@ -29,7 +29,8 @@ try {
             b.title, 
             b.slug, 
             b.content, 
-            b.status, 
+            b.status,
+            b.featured_image, 
             b.created_at, 
             u.username AS author, 
             c.name AS category, 
@@ -62,20 +63,22 @@ try {
 
         // Process the blogs and tags
         $response['data'] = array_map(function ($blog) {
-            // Debugging: Log the current blog being processed
-            error_log("Processing blog: " . print_r($blog, true));
+            // Construct full URL for the featured image
+            $base_url = 'https://www.dashboard.lyzerslab.com/'; // Replace with your domain or path
+            $featured_image_url = $base_url . 'files/' . $blog['featured_image'];  // Replace with your actual image folder
 
             // Clean up the slug to replace `:` with `-` if needed, and avoid double hyphen
             $cleanSlug = str_replace(":", "-", $blog['slug']);  // Replace colon with hyphen
             $cleanSlug = preg_replace('/-+/', '-', $cleanSlug); // Remove any consecutive hyphens
 
-            // Return cleaned-up blog data
+            // Return cleaned-up blog data with full image URL
             return [
                 'id' => (int) $blog['id'],
                 'title' => $blog['title'],
                 'slug' => $cleanSlug,  // Cleaned slug with single hyphen
                 'content' => $blog['content'],
                 'status' => $blog['status'],
+                'featured_image' => $featured_image_url,  // Full image URL
                 'created_at' => $blog['created_at'],
                 'author' => $blog['author'],
                 'category' => $blog['category'],
