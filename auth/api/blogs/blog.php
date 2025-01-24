@@ -62,25 +62,26 @@ try {
         
         // Process the blogs and tags
         $response['data'] = array_map(function ($blog) {
-            // Debugging: Log the current blog being processed
+            // Log each blog to check if the data is correct
             error_log("Processing blog: " . print_r($blog, true));
-
-            // Clean up the slug to replace `:` with `-` if needed, and avoid double hyphen
-            $cleanSlug = str_replace(":", "-", $blog['slug']);  // Replace colon with hyphen
-            $cleanSlug = preg_replace('/-+/', '-', $cleanSlug); // Remove any consecutive hyphens
-
+        
+            // Clean up the slug and return the response
+            $cleanSlug = str_replace(":", "-", $blog['slug']);
+            $cleanSlug = preg_replace('/-+/', '-', $cleanSlug);
+        
             return [
                 'id' => (int) $blog['id'],
                 'title' => $blog['title'],
-                'slug' => $cleanSlug,  // Cleaned slug with single hyphen
+                'slug' => $cleanSlug,
                 'content' => $blog['content'],
                 'status' => $blog['status'],
                 'created_at' => $blog['created_at'],
                 'author' => $blog['author'],
                 'category' => $blog['category'],
-                'tags' => $blog['tags'] ? array_filter(explode(',', $blog['tags'])) : []  // Convert tags into an array, or empty if none
+                'tags' => $blog['tags'] ? array_filter(explode(',', $blog['tags'])) : []
             ];
         }, $blogs);
+        
     } else {
         $response['status'] = 'error';
         $response['message'] = 'No blogs found.';
