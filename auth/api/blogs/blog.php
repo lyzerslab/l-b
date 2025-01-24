@@ -33,10 +33,10 @@ try {
             b.created_at, 
             u.username AS author, 
             c.name AS category, 
-            IFNULL(GROUP_CONCAT(DISTINCT bt.tag ORDER BY bt.tag ASC), '') AS tags
+            IFNULL(GROUP_CONCAT(DISTINCT t.tag ORDER BY t.tag ASC), '') AS tags
         FROM blogs b
         LEFT JOIN categories c ON b.category_id = c.id
-        LEFT JOIN blog_tags bt ON b.id = bt.blog_id
+        LEFT JOIN blog_tags t ON b.id = t.blog_id
         LEFT JOIN admin_users u ON b.author_id = u.id
         GROUP BY b.id
         ORDER BY b.created_at DESC;
