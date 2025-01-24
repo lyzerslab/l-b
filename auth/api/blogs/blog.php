@@ -21,12 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 // Fetch blogs from the database
 $sql = "SELECT b.id, b.title, b.slug, b.content, b.status, b.created_at, 
                u.username AS author,  
-               c.name as category, 
-               GROUP_CONCAT(DISTINCT bt.tag ORDER BY bt.tag ASC) AS tags
+               c.name AS category, 
+               IFNULL(GROUP_CONCAT(DISTINCT bt.tag ORDER BY bt.tag ASC), '') AS tags  -- Use IFNULL to return an empty string if no tags
         FROM blogs b
         LEFT JOIN categories c ON b.category_id = c.id
         LEFT JOIN blog_tags bt ON b.id = bt.blog_id
-        LEFT JOIN admin_users u ON b.author_id = u.id  -- Ensure 'author_id' matches the column in blogs table
+        LEFT JOIN admin_users u ON b.author_id = u.id  
         GROUP BY b.id
         ORDER BY b.created_at DESC";
 
