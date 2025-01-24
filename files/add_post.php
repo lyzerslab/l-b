@@ -12,11 +12,11 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 require_once "../auth/db-connection/config.php";
 
 // Initialize error variables
-$title_err = $slug_err = $content_err = $category_id_err = $status_err = $image_err = "";
+$title_err = $slug_err = $content_err = $category_id_err = $status_err = $image_err = $tags_err = $success = "";
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $title = $slug = $content = $featured_image = $category_id = $status = "";
+    $title = $slug = $content = $featured_image = $category_id = $status = $tags = "";
 
     // Validate input
     if (empty(trim($_POST["title"]))) {
@@ -25,6 +25,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $title = trim($_POST["title"]);
         // Generate slug from title
         $slug = strtolower(str_replace(" ", "-", $title)); // Simple slug generation
+
+        // Check if the slug already exists in the database
+        $check_slug_sql = "SELECT id FROM blogs WHERE slug = :slug";
+        if ($check_slug_stmt = $connection->prepare($check_slug_sql)) {
+            $check_slug_stmt->bindParam(":slug", $slug, PDO::PARAM_STR);
+            $check_slug_stmt->execute();
+
+            // If the slug exists, modify it to make it unique
+            $slug_exists = $check_slug_stmt->fetch(PDO::FETCH_ASSOC);
+            if ($slug_exists) {
+                $slug_err = "This slug is already in use.";
+                // Append a unique number to the slug
+                $original_slug = $slug;
+                $counter = 1;
+                while ($slug_exists) {
+                    $slug = $original_slug . '-' . $counter;
+                    $check_slug_stmt->execute();  // Re-run the query
+                    $slug_exists = $check_slug_stmt->fetch(PDO::FETCH_ASSOC);
+                    $counter++;
+                }
+            }
+        }
     }
 
     if (empty(trim($_POST["content"]))) {
@@ -47,9 +69,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Image upload validation
     if ($_FILES["featured_image"]["error"] == 0) {
-        $allowed_types = ["image/jpeg", "image/png", "image/gif"];
+        $allowed_types = ["image/jpeg", "image/png", "image/gif", "image/avif"];
         if (!in_array($_FILES["featured_image"]["type"], $allowed_types)) {
-            $image_err = "Only JPG, PNG, and GIF images are allowed.";
+            $image_err = "Only JPG, PNG, GIF, and AVIF images are allowed.";
         } else {
             $target_dir = "blog/";
             $target_file = $target_dir . basename($_FILES["featured_image"]["name"]);
@@ -61,8 +83,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
+    // Get tags and process them
+    if (!empty(trim($_POST["tags"]))) {
+        $tags = trim($_POST["tags"]);
+        // Split tags by commas
+        $tags_array = array_map('trim', explode(',', $tags));
+    } else {
+        $tags_err = "Please enter at least one tag.";
+    }
+
     // If no errors, insert the post into the database
-    if (empty($title_err) && empty($content_err) && empty($category_id_err) && empty($status_err) && empty($image_err)) {
+    if (empty($title_err) && empty($content_err) && empty($category_id_err) && empty($status_err) && empty($image_err) && empty($tags_err) && empty($slug_err)) {
         $sql = "INSERT INTO blogs (title, slug, content, featured_image, category_id, author_id, created_at, updated_at, status)
                 VALUES (:title, :slug, :content, :featured_image, :category_id, :author_id, NOW(), NOW(), :status)";
 
@@ -76,9 +107,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bindParam(":status", $status, PDO::PARAM_STR);
 
             if ($stmt->execute()) {
-                echo "Blog post added successfully.";
+                // After blog is added, get the blog ID
+                $blog_id = $connection->lastInsertId();
+
+                // Insert tags into the blog_tags table
+                foreach ($tags_array as $tag) {
+                    $tag = trim($tag); // Clean up the tag
+                    if (!empty($tag)) {
+                        $tag_sql = "INSERT INTO blog_tags (blog_id, tag) VALUES (:blog_id, :tag)";
+                        if ($tag_stmt = $connection->prepare($tag_sql)) {
+                            $tag_stmt->bindParam(":blog_id", $blog_id, PDO::PARAM_INT);
+                            $tag_stmt->bindParam(":tag", $tag, PDO::PARAM_STR);
+                            $tag_stmt->execute();
+                        }
+                    }
+                }
+
+                $success = "Blog post added successfully.";
             } else {
-                echo "Error adding post.";
+                $success = "Error adding post.";
             }
         }
     }
@@ -248,6 +295,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="header-body">
                             <div class="main">
                                 <h1 class="page-heading">Add New Post</h1>
+
+                                <!-- Display success or error message -->
+                                <?php if (!empty($success)) : ?>
+                                    <div class="alert alert-success">
+                                        <?php echo $success; ?>
+                                    </div>
+                                <?php endif; ?>
+
                                 <form method="POST" action="add_post.php" enctype="multipart/form-data" onsubmit="return validateForm();">
                                     <div class="mb-3">
                                         <label for="title" class="form-label">Title</label>
@@ -291,6 +346,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                             <option value="published">Published</option>
                                         </select>
                                         <small class="text-danger"><?php echo $status_err; ?></small>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="tags" class="form-label">Tags</label>
+                                        <input type="text" class="form-control" id="tags" name="tags" placeholder="Enter tags, separated by commas">
+                                        <small class="text-danger"><?php echo $tags_err; ?></small>
                                     </div>
 
                                     <div class="mb-3">

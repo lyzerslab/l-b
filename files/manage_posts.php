@@ -12,10 +12,12 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 require_once "../auth/db-connection/config.php";
 
 
-// Fetch posts from the database
-$sql = "SELECT b.id, b.title, b.slug, b.content, b.status, b.created_at, c.name as category
+// Fetch posts and tags from the database
+$sql = "SELECT b.id, b.title, b.slug, b.content, b.status, b.created_at, c.name as category, GROUP_CONCAT(bt.tag) AS tags
         FROM blogs b
         LEFT JOIN categories c ON b.category_id = c.id
+        LEFT JOIN blog_tags bt ON b.id = bt.blog_id
+        GROUP BY b.id
         ORDER BY b.created_at DESC";
 
 $stmt = $connection->prepare($sql);
@@ -191,7 +193,8 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <th>Category</th>
                                         <th>Status</th>
                                         <th>Created At</th>
-                                        <th>Content</th>  <!-- Add a new column for content -->
+                                        <th>Content</th>
+                                        <th>Tags</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -207,6 +210,7 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <?php echo $post['status'] == 'published' ? '<span class="badge bg-success">Published</span>' : '<span class="badge bg-secondary">Draft</span>'; ?>
                                                 </td>
                                                 <td><?php echo date('Y-m-d', strtotime($post['created_at'])); ?></td>
+                                               
                                                 <td>
                                                     <!-- Display a snippet of the content (first 100 characters) -->
                                                     <?php 
@@ -214,6 +218,7 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     echo $content_snippet . (strlen($post['content']) > 100 ? '...' : ''); 
                                                     ?>
                                                 </td>
+                                                <td><?php echo htmlspecialchars($post['tags']); ?></td>
                                                 <td>
                                                     <a href="edit_post.php?id=<?php echo $post['id']; ?>" class="btn btn-primary btn-sm">
                                                         <i class="fa-solid fa-edit"></i> Edit
