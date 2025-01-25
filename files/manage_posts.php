@@ -13,12 +13,22 @@ require_once "../auth/db-connection/config.php";
 
 
 // Fetch posts and tags from the database
-$sql = "SELECT b.id, b.title, b.slug, b.content, b.status, b.created_at, c.name as category, GROUP_CONCAT(bt.tag) AS tags
-        FROM blogs b
-        LEFT JOIN categories c ON b.category_id = c.id
-        LEFT JOIN blog_tags bt ON b.id = bt.blog_id
-        GROUP BY b.id
-        ORDER BY b.created_at DESC";
+$sql = "SELECT 
+    b.id, 
+    b.title, 
+    b.slug, 
+    b.content, 
+    b.status, 
+    b.created_at, 
+    c.name AS category, 
+    u.username AS author, 
+    GROUP_CONCAT(bt.tag) AS tags
+FROM blogs b
+LEFT JOIN categories c ON b.category_id = c.id
+LEFT JOIN blog_tags bt ON b.id = bt.blog_id
+LEFT JOIN admin_users u ON b.author_id = u.id
+GROUP BY b.id
+ORDER BY b.created_at DESC;";
 
 $stmt = $connection->prepare($sql);
 $stmt->execute();
@@ -195,6 +205,7 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <th>Created At</th>
                                         <th>Content</th>
                                         <th>Tags</th>
+                                        <th>Author</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -219,6 +230,7 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     ?>
                                                 </td>
                                                 <td><?php echo htmlspecialchars($post['tags']); ?></td>
+                                                <td><?php echo htmlspecialchars($post['author']); ?></td>
                                                 <td>
                                                     <a href="edit_post.php?id=<?php echo $post['id']; ?>" class="btn btn-primary btn-sm">
                                                         <i class="fa-solid fa-edit"></i> Edit
