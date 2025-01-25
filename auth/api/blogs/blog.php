@@ -32,7 +32,8 @@ try {
             b.status,
             b.featured_image, 
             b.created_at, 
-            u.username AS author, 
+            u.username AS author,
+            u.profile_photo AS author_photo, 
             c.name AS category, 
             IFNULL(GROUP_CONCAT(DISTINCT t.tag ORDER BY t.tag ASC), '') AS tags
         FROM blogs b
@@ -81,6 +82,7 @@ try {
                 'featured_image' => $featured_image_url,  // Full image URL
                 'created_at' => $blog['created_at'],
                 'author' => $blog['author'],
+                'author_photo' => $blog['author_photo'],
                 'category' => $blog['category'],
                 'tags' => $blog['tags'] ? array_filter(explode(',', $blog['tags'])) : []  // Convert tags into an array, or empty if none
             ];
