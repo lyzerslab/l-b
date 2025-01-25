@@ -73,7 +73,7 @@ try {
             $cleanSlug = preg_replace('/-+/', '-', $cleanSlug); // Remove any consecutive hyphens
 
              // Use the author's profile photo from the database if available
-             $author_photo_base_path = $base_url . 'files/super-admin/';  // Path to the author photo folder
+             $author_photo_base_path = $base_url . 'files/';  // Path to the author photo folder
              $author_photo = $blog['author_photo'] ? $author_photo_base_path . $blog['author_photo'] : $author_photo_base_path . 'https://lyzerslab.com/_next/image?url=https%3A%2F%2Fwww.dashboard.lyzerslab.com%2Ffiles%2Fblog%2Fimage.avif&w=3840&q=75'; // Fallback to default if not set
 
             // Return cleaned-up blog data with full image URL
