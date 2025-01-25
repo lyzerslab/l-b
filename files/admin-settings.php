@@ -98,6 +98,24 @@ if ($stmt = $connection->prepare($sql)) {
                                 <span class="block">Projects</span>
                             </a>
                         </li>
+                        <li class="">
+                            <a href="media.php">
+                                <i class="fa-regular fa-user"></i>
+                                <span class="block">Media Manager</span>
+                            </a>
+                        </li>
+                         <!-- Blog Menu with Dropdown -->
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-blog"></i>
+                                <span class="block">Blog</span>
+                            </a>
+                            <ul class="dropdown-menu" style="margin-top: -2px;">
+                                <li><a href="manage_posts.php"><i class="fa-solid fa-list"></i> Manage Posts</a></li>
+                                <li><a href="add_post.php"><i class="fa-solid fa-plus"></i> Add New Post</a></li>
+                                <li><a href="manage_categories.php"><i class="fa-solid fa-tags"></i> Manage Categories</a></li>
+                            </ul>
+                        </li>
                     </ul>
                 </div>
             </div>

@@ -64,7 +64,7 @@ if ($stmt = $connection->prepare($sql)) {
                 </div>
                 <div class="sidebard-nav">
                     <ul>
-                        <li class="active">
+                        <li class="">
                             <a href="dashboard.php">
                                 <i class="fa-solid fa-table-columns"></i>
                                 <span class="block">Dashboard</span>
@@ -86,13 +86,6 @@ if ($stmt = $connection->prepare($sql)) {
                         </li>
 
                         <li class="">
-                            <a href="media.php">
-                                <i class="fa-regular fa-user"></i>
-                                <span class="block">Media</span>
-                            </a>
-                        </li>
-
-                        <li class="">
                             <a href="employees.php">
                                 <i class="fa-regular fa-user"></i>
                                 <span class="block">Employees</span>
@@ -105,7 +98,7 @@ if ($stmt = $connection->prepare($sql)) {
                                 <span class="block">Projects</span>
                             </a>
                         </li>
-                        <li class="">
+                        <li class="active">
                             <a href="media.php">
                                 <i class="fa-regular fa-user"></i>
                                 <span class="block">Media Manager</span>
@@ -193,65 +186,27 @@ if ($stmt = $connection->prepare($sql)) {
                 </div>
                 <div class="h-container">
                     <div class="main">
-                        <h1 class="page-heading"> Dashboard </h1>
-                        <!-- Statistics -->
-                        <div class="sales-small-stats">
-                            <div class="sales-small-stats-inner">
-                                <div class="icon">
-                                    <div class="doller">
-                                        <i class="fa-solid fa-envelope"></i>
+                        <div class="container my-5">
+                            <h1 class="text-center mb-4">Media Manager</h1>
+
+                            <!-- Upload Form -->
+                            <div class="card p-4 shadow-sm">
+                                <h4 class="mb-3">Upload Media</h4>
+                                <form id="uploadForm" enctype="multipart/form-data">
+                                    <div class="mb-3">
+                                        <input type="file" class="form-control" name="file" id="fileInput" required>
                                     </div>
-                                </div>
-                               <?php
-                                // Assuming you have a PDO connection named $connection
-                                $query = "SELECT COUNT(*) AS total_subscribers FROM subscribers";
-                                $stmt = $connection->prepare($query);
-                                $stmt->execute();
+                                    <button type="submit" class="btn btn-primary w-100">Upload</button>
+                                </form>
+                                <div id="message" class="mt-3 text-center"></div>
+                            </div>
 
-                                // Check if the query was successful
-                                if ($stmt && $stmt->rowCount() > 0) {
-                                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-                                    $totalSubscribers = $result['total_subscribers'];
-                                } else {
-                                    $totalSubscribers = 0;
-                                }
-                                ?>
-
-                                <div class="stats-d">
-                                    <span class="block sub-title">Total Subscribers</span>
-                                    <span class="block satts-number"><?php echo $totalSubscribers; ?></span>
-                                </div>
-                            </div>   
-                            
-                            <div class="sales-small-stats-inner">
-                                <div class="icon color-g">
-                                    <div class="doller">
-                                        <i class="fa-solid fa-address-book"></i>
-                                    </div>
-                                </div>
-                               <?php
-                                // Assuming you have a PDO connection named $connection
-                                $query = "SELECT COUNT(*) AS total_entries FROM formdata";
-                                $stmt = $connection->prepare($query);
-                                $stmt->execute();
-
-                                // Check if the query was successful
-                                if ($stmt && $stmt->rowCount() > 0) {
-                                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-                                    $totalEntries = $result['total_entries'];
-                                } else {
-                                    $totalEntries = 0;
-                                }
-                                ?>
-
-                                <div class="stats-d">
-                                    <span class="block sub-title">Total Form Entries</span>
-                                    <span class="block satts-number"><?php echo $totalEntries; ?></span>
-                                </div>
-                            </div>   
+                            <!-- Media Library -->
+                            <div class="mt-5">
+                                <h2 class="mb-4">Uploaded Files</h2>
+                                <div class="row row-cols-2 row-cols-md-4 g-4" id="fileList"></div>
+                            </div>
                         </div>
-
-
                 
                         <footer class="footer mt-5">
                             <p class="mb-0">
@@ -298,6 +253,90 @@ if ($stmt = $connection->prepare($sql)) {
                 appWrapperS.classList.remove('show-sidebar');
             });
         });
+    </script>
+    <script>
+        // Upload file via AJAX
+        document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            const response = await fetch('../auth/backend-assets/mediaupload.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            const message = document.getElementById('message');
+
+            if (result.success) {
+                message.textContent = result.success;
+                message.style.color = "green";
+                loadFiles(); // Refresh the file list
+            } else {
+                message.textContent = result.error;
+                message.style.color = "red";
+            }
+        });
+
+        // Load uploaded files
+        async function loadFiles() {
+                const response = await fetch('../auth/backend-assets/getmedia.php'); // Fetch media data from backend
+                const files = await response.json(); // Parse the response to JSON
+
+                const fileList = document.getElementById('fileList');
+                fileList.innerHTML = ''; // Clear the existing list of files
+
+                files.forEach(file => {
+                    const col = document.createElement('div');
+                    col.className = 'col mb-4'; // Bootstrap column class for spacing
+
+                    let content;
+
+                    // Determine how to render the file based on its type
+                    if (file.file_type.startsWith('image')) {
+                        // Image preview
+                        content = `<img src="${file.file_path}" alt="${file.file_name}" style="width: 100%; height: 150px; object-fit: cover;" class="rounded shadow">`;
+                    } else if (file.file_type.startsWith('video')) {
+                        // Video preview
+                        content = `<video controls style="width: 100%; height: 150px; object-fit: cover;" class="rounded shadow">
+                                    <source src="${file.file_path}" type="${file.file_type}">
+                                    Your browser does not support the video tag.
+                                </video>`;
+                    } else {
+                        // Link for other file types
+                        content = `<div class="text-center">
+                                    <a href="${file.file_path}" target="_blank" class="btn btn-outline-primary">
+                                        View File
+                                    </a>
+                                </div>`;
+                    }
+
+                    // Build the card HTML, show the file path and a button to copy the path
+                    col.innerHTML = `
+                        <div class="card shadow-sm">
+                            ${content}
+                            <div class="card-body text-center">
+                                <button class="btn btn-outline-secondary" onclick="copyFilePath('${file.file_path}')">Copy Path</button>
+                            </div>
+                        </div>
+                    `;
+                    fileList.appendChild(col);
+                });
+            }
+
+            // Copy file path to clipboard
+            function copyFilePath(filePath) {
+                const tempInput = document.createElement('input');
+                document.body.appendChild(tempInput);
+                tempInput.value = filePath;
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                alert('File path copied to clipboard!');
+            }
+
+            // Load files on page load
+            loadFiles();
     </script>
     
 </body>
