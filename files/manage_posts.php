@@ -192,6 +192,16 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="h-container">
                     <div class="main">
                         <h1 class="page-heading">Manage Posts</h1>
+
+                        <?php if (isset($_GET['message'])): ?>
+                            <div class="alert alert-success">
+                                <?php echo htmlspecialchars($_GET['message']); ?>
+                            </div>
+                        <?php elseif (isset($_GET['error'])): ?>
+                            <div class="alert alert-danger">
+                                <?php echo htmlspecialchars($_GET['error']); ?>
+                            </div>
+                        <?php endif; ?>
                         <!-- Add New Post Button -->
                         <div class="mb-3 text-end">
                             <a href="add_post.php" class="btn btn-success">
@@ -242,7 +252,7 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <a href="edit_post.php?id=<?php echo $post['id']; ?>" class="btn btn-primary btn-sm">
                                                         <i class="fa-solid fa-edit"></i> Edit
                                                     </a>
-                                                    <a href="delete_post.php?id=<?php echo $post['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this post?');">
+                                                    <a href="../auth/backend-assets/delete_post.php?id=<?php echo $post['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this post?');">
                                                         <i class="fa-solid fa-trash"></i> Delete
                                                     </a>
                                                 </td>
