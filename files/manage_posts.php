@@ -35,6 +35,7 @@ ORDER BY b.created_at DESC;";
 $stmt = $connection->prepare($sql);
 $stmt->execute();
 $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 <!DOCTYPE html>

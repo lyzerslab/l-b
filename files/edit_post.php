@@ -6,61 +6,60 @@ session_start();
 // Include config file
 require_once "../auth/db-connection/config.php";
 
-// Check if the user is logged in, if not then redirect to the login page
+// Check if the user is logged in, if not then redirect him to the login page
 // Use BASE_URL for redirects
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: " . BASE_URL . "index.php");
     exit;
 }
 
-// Fetch all categories
-$sql = "SELECT * FROM categories ORDER BY created_at DESC";
-$categories = $connection->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-
-
-// Check if edit request is made
-$editMode = false;
-$editCategory = [];
-
-// Handle edit request
-if (isset($_GET['edit_id'])) {
-    $editMode = true;
-    $editId = $_GET['edit_id'];
-
-    // Fetch the category to edit
-    $sql = "SELECT * FROM categories WHERE id = :id";
-    $stmt = $connection->prepare($sql);
-    $stmt->bindParam(':id', $editId, PDO::PARAM_INT);
-    $stmt->execute();
-    $editCategory = $stmt->fetch(PDO::FETCH_ASSOC);
+// Ensure the ID is passed via URL
+if (!isset($_GET['id'])) {
+    die('Post ID not provided.');
 }
 
-// Handle form submission for updating a category
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_category'])) {
-    $id = $_POST['id'];
-    $name = $_POST['name'];
-    $description = $_POST['description'];
+$postId = $_GET['id'];
 
-    // Update query
-    $sql = "UPDATE categories SET name = :name, description = :description WHERE id = :id";
-    $stmt = $connection->prepare($sql);
-    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-    $stmt->bindParam(':name', $name, PDO::PARAM_STR);
-    $stmt->bindParam(':description', $description, PDO::PARAM_STR);
+// Fetch the post details from the database
+$sql = "SELECT 
+    b.id, 
+    b.title, 
+    b.slug,
+    b.status, 
+    b.category_id, 
+    b.author_id, 
+    c.name AS category, 
+    u.username AS author, 
+    GROUP_CONCAT(bt.tag) AS tags
+FROM blogs b
+LEFT JOIN categories c ON b.category_id = c.id
+LEFT JOIN blog_tags bt ON b.id = bt.blog_id
+LEFT JOIN admin_users u ON b.author_id = u.id
+WHERE b.id = :id
+GROUP BY b.id";
 
-    if ($stmt->execute()) {
-        header("location: manage_categories.php?message=Category updated successfully.");
-        exit;
-    } else {
-        echo "<div class='alert alert-danger'>Failed to update the category.</div>";
-    }
+$stmt = $connection->prepare($sql);
+$stmt->execute([':id' => $postId]);
+$post = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// If no post found
+if (!$post) {
+    die('Post not found.');
 }
+
+// Fetch categories and authors for dropdowns
+$categories_sql = "SELECT id, name FROM categories";
+$categories = $connection->query($categories_sql)->fetchAll(PDO::FETCH_ASSOC);
+
+$authors_sql = "SELECT id, username FROM admin_users";
+$authors = $connection->query($authors_sql)->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashbaord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,9 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_category'])) {
 
     <script src="../files/js/main.js"></script>
 </head>
-<body>
-
-
 <body style="background: #f7f7f7;">
     <main>
         <div class="app-wrapper">
@@ -214,73 +210,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_category'])) {
                 </div>
 
                 <div class="h-container">
-                    <div class="container mt-5">
-                        <h1 class="page-heading">Manage Categories</h1>
+                    <div class="main">
+                        <h1 class="page-heading">Manage Posts</h1>
 
-                        <!-- Add New Post Button -->
-                        <div class="mb-3 text-end">
-                            <a href="add_category.php" class="btn btn-success">
-                                <i class="fa-solid fa-plus"></i> Add New Category
-                            </a>
-                        </div>
-                        <!-- Categories Table -->
-                        <div class="table-responsive">
-                            <h2>Categories List</h2>
-                            <table class="table table-bordered table-striped">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Name</th>
-                                        <th>Description</th>
-                                        <th>Created At</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (!empty($categories)) : ?>
-                                        <?php foreach ($categories as $category) : ?>
-                                            <tr>
-                                                <td><?php echo $category['id']; ?></td>
-                                                <td><?php echo htmlspecialchars($category['name']); ?></td>
-                                                <td><?php echo htmlspecialchars($category['description']); ?></td>
-                                                <td><?php echo date('Y-m-d', strtotime($category['created_at'])); ?></td>
-                                                <td>
-                                                <a href="edit_post.php?id=<?php echo $post['id']; ?>" class="btn btn-primary btn-sm">Edit</a>
-                                                    <a href="delete_category.php?id=<?php echo $category['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this category?');">Delete</a>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php else : ?>
-                                        <tr>
-                                            <td colspan="5" class="text-center">No categories found.</td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-
-                            <div class="container mt-5">
-                                <?php if ($editMode && !empty($editCategory)) : ?>
-                                    <h2>Edit Category</h2>
-                                    <form method="POST" action="manage_categories.php">
-                                        <input type="hidden" name="id" value="<?php echo $editCategory['id']; ?>">
-                                        <div class="mb-3">
-                                            <label for="name" class="form-label">Category Name</label>
-                                            <input type="text" name="name" id="name" class="form-control" value="<?php echo htmlspecialchars($editCategory['name']); ?>" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="description" class="form-label">Description</label>
-                                            <textarea name="description" id="description" class="form-control" rows="3" required><?php echo htmlspecialchars($editCategory['description']); ?></textarea>
-                                        </div>
-                                        <button type="submit" name="update_category" class="btn btn-primary">Update Category</button>
-                                        <a href="manage_categories.php" class="btn btn-secondary">Cancel</a>
-                                    </form>
-                                <?php endif; ?>
+                        <?php if (isset($_GET['message'])): ?>
+                            <div class="alert alert-success">
+                                <?php echo htmlspecialchars($_GET['message']); ?>
                             </div>
-                        </div>
+                        <?php elseif (isset($_GET['error'])): ?>
+                            <div class="alert alert-danger">
+                                <?php echo htmlspecialchars($_GET['error']); ?>
+                            </div>
+                        <?php endif; ?>
+                        <h1>Edit Post</h1>
+
+                        <form action="../auth/backend-assets/update_post.php" method="POST">
+                            <input type="hidden" name="id" value="<?php echo $post['id']; ?>">
+
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Title</label>
+                                <input type="text" class="form-control" id="title" name="title" value="<?php echo htmlspecialchars($post['title']); ?>" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="slug" class="form-label">Slug</label>
+                                <input type="text" class="form-control" id="slug" name="slug" value="<?php echo htmlspecialchars($post['slug']); ?>" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category_id" required>
+                                    <?php foreach ($categories as $category) : ?>
+                                        <option value="<?php echo $category['id']; ?>" <?php echo $category['id'] == $post['category_id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($category['name']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="published" <?php echo $post['status'] == 'published' ? 'selected' : ''; ?>>Published</option>
+                                    <option value="draft" <?php echo $post['status'] == 'draft' ? 'selected' : ''; ?>>Draft</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="tags" class="form-label">Tags</label>
+                                <input type="text" class="form-control" id="tags" name="tags" value="<?php echo htmlspecialchars($post['tags']); ?>">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="author" class="form-label">Author</label>
+                                <select class="form-select" id="author" name="author_id" required>
+                                    <?php foreach ($authors as $author) : ?>
+                                        <option value="<?php echo $author['id']; ?>" <?php echo $author['id'] == $post['author_id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($author['username']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </form>
+
+                        <!-- Footer -->
+                        <footer class="footer mt-5">
+                            <p class="mb-0">
+                                Copyright © <span>2024</span> Lyzerslab. All Rights Reserved.
+                            </p>
+                        </footer>
                     </div>
                 </div>
             </div>
-            
+
         </div>
     </main>
 
