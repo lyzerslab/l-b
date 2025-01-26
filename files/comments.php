@@ -1,12 +1,8 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-
 // Initialize the session
 session_start();
 
-// Check if the user is logged in, if not then redirect him to the login page
+// Check if the user is logged in
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: ../../../index.php");
     exit;
@@ -15,31 +11,32 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 // Include config file
 require_once "../auth/db-connection/config.php";
 
-// Fetch additional user information from the database using the user ID
-$userId = $_SESSION["id"];
-$sql = "SELECT profile_photo, is_admin FROM admin_users WHERE id = :userId";
+// Handle status update
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["update_status"])) {
+    $commentId = $_POST["comment_id"];
+    $status = $_POST["status"];
 
-if ($stmt = $connection->prepare($sql)) {
-    $stmt->bindParam(":userId", $userId, PDO::PARAM_INT);
-
-    if ($stmt->execute()) {
-        $stmt->bindColumn("profile_photo", $profilePhoto);
-        $stmt->bindColumn("is_admin", $isAdmin); 
-        if ($stmt->fetch()) {
-            // User profile photo found, update the session
-            $_SESSION["profile_photo"] = $profilePhoto;
-             $_SESSION["is_admin"] = $isAdmin;
-        } else {
-            // User not found or profile photo not set, you can handle this case
-        }
+    if ($status === "spam") {
+        // Delete comment if marked as spam
+        $deleteQuery = "DELETE FROM comments WHERE id = :commentId";
+        $stmt = $connection->prepare($deleteQuery);
+        $stmt->bindParam(":commentId", $commentId, PDO::PARAM_INT);
+        $stmt->execute();
     } else {
-        echo "Oops! Something went wrong. Please try again later.";
+        // Update status otherwise
+        $updateQuery = "UPDATE comments SET status = :status WHERE id = :commentId";
+        $stmt = $connection->prepare($updateQuery);
+        $stmt->bindParam(":status", $status, PDO::PARAM_STR);
+        $stmt->bindParam(":commentId", $commentId, PDO::PARAM_INT);
+        $stmt->execute();
     }
-
-    unset($stmt); // Close statement
 }
 
-
+// Fetch comments from the database
+$query = "SELECT * FROM comments ORDER BY created_at DESC";
+$stmt = $connection->prepare($query);
+$stmt->execute();
+$comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -47,13 +44,15 @@ if ($stmt = $connection->prepare($sql)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subscriber List</title>
+    <title>Dashbaord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="../styling/style.css">
+
+    <script src="../files/js/main.js"></script>
 </head>
 <body style="background:#f7f7f7;">
     <main>
@@ -70,7 +69,7 @@ if ($stmt = $connection->prepare($sql)) {
                 </div>
                 <div class="sidebard-nav">
                     <ul>
-                        <li class="">
+                        <li class="active">
                             <a href="dashboard.php">
                                 <i class="fa-solid fa-table-columns"></i>
                                 <span class="block">Dashboard</span>
@@ -84,10 +83,17 @@ if ($stmt = $connection->prepare($sql)) {
                             </a>
                         </li>
 
-                        <li class="active">
+                        <li class="=">
                             <a href="contact.php">
                                <i class="fa-solid fa-cart-flatbed-suitcase"></i>
                                 <span class="block">Contact</span>
+                            </a>
+                        </li>
+
+                        <li class="">
+                            <a href="media.php">
+                                <i class="fa-regular fa-user"></i>
+                                <span class="block">Media</span>
                             </a>
                         </li>
 
@@ -116,7 +122,7 @@ if ($stmt = $connection->prepare($sql)) {
                                 <i class="fa-solid fa-blog"></i>
                                 <span class="block">Blog</span>
                             </a>
-                                                       <ul class="dropdown-menu" style="margin-top: -2px;">
+                            <ul class="dropdown-menu" style="margin-top: -2px;">
                                 <li><a href="manage_posts.php"><i class="fa-solid fa-list"></i> Manage Posts</a></li>
                                 <li><a href="add_post.php"><i class="fa-solid fa-plus"></i> Add New Post</a></li>
                                 <li><a href="manage_categories.php"><i class="fa-solid fa-tags"></i> Manage Categories</a></li>
@@ -140,31 +146,10 @@ if ($stmt = $connection->prepare($sql)) {
                         </form>
                     </div>
                     <div class="account">
-                    <!-- Notifications -->
-                    <div class="notifications" id="notificationsDropdown">
-                        <i class="far fa-bell"></i>
-                        
-                    </div>
-
-                    <!-- Notifications Menu -->
-                    <div class="notifications-menu" id="notificationsMenu" style="display: none;">
-                        <div class="notification-item">
-                            <a href="#">New Users Sign Up <span class="badge badge-primary"><?php echo $new_users_count; ?></span></a>
+                        <!-- Notifications -->
+                        <div class="notifications" id="notificationsDropdown">
+                            <i class="far fa-bell"></i>
                         </div>
-                        <div class="notification-item">
-                            <a href="#">New Orders <span class="badge badge-primary"><?php echo $new_orders_count; ?></span></a>
-                        </div>
-                        <div class="notification-item">
-                            <a href="#">New Customers</a>
-                            <!-- Display new customer details -->
-                            <ul>
-                                <?php foreach ($new_customers as $customer): ?>
-                                    <li><?php echo $customer['id']; ?>: <?php echo $customer['customer_name']; ?></li>
-                                    <!-- Add more customer details as needed -->
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                    </div>
                         <!-- User  -->
                         <div class="wrap-u" onclick="toggleUserOptions()">
                             <div class="user-pro flex">
@@ -193,9 +178,10 @@ if ($stmt = $connection->prepare($sql)) {
                                     <div class="flex-col">
                                         <span class="block"><?php echo strtoupper(htmlspecialchars($_SESSION["username"])); ?></span>
                                         <?php
-                                        if($isAdmin==1){
+                                        // Use $_SESSION['is_admin'] to check the user role
+                                        if ($_SESSION['is_admin'] == 1) {
                                             echo '<span class="block"> Super Admin</span>';
-                                        }else{
+                                        } else {
                                             echo '<span class="block"> Admin </span>';
                                         }
                                         ?>
@@ -213,149 +199,47 @@ if ($stmt = $connection->prepare($sql)) {
                 </div>
                 <div class="h-container">
                     <div class="main">
-                        <h1 class="page-heading"> Replay Customer </h1>
+                    <h1 class="mb-4">Manage Comments</h1>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Blog ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Content</th>
+                    <th>Created At</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($comments as $comment): ?>
+                <tr>
+                    <td><?= htmlspecialchars($comment["id"]) ?></td>
+                    <td><?= htmlspecialchars($comment["blog_id"]) ?></td>
+                    <td><?= htmlspecialchars($comment["name"]) ?></td>
+                    <td><?= htmlspecialchars($comment["email"]) ?></td>
+                    <td><?= htmlspecialchars($comment["content"]) ?></td>
+                    <td><?= htmlspecialchars($comment["created_at"]) ?></td>
+                    <td><?= htmlspecialchars($comment["status"]) ?></td>
+                    <td>
+                        <form method="POST" class="d-inline">
+                            <input type="hidden" name="comment_id" value="<?= $comment["id"] ?>">
+                            <select name="status" class="form-select form-select-sm mb-2" required>
+                                <option value="pending" <?= $comment["status"] === "pending" ? "selected" : "" ?>>Pending</option>
+                                <option value="approved" <?= $comment["status"] === "approved" ? "selected" : "" ?>>Approved</option>
+                                <option value="spam">Spam</option>
+                            </select>
+                            <button type="submit" name="update_status" class="btn btn-primary btn-sm">Update</button>
+                        </form>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
 
-                            <!-- replaySubscriber.php -->
-                            
-<?php
-// Include PHPMailer autoload
-require 'vendor/autoload.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-// Function to send email using PHPMailer
-function sendEmail($recipientEmail, $subject, $message) {
-    $mail = new PHPMailer(true);
-
-    try {
-        // SMTP configuration
-        $mail->isSMTP();
-        $mail->Host = 'ecommerce.glassfittingserviceinriyadh.com'; // SMTP server
-        $mail->SMTPAuth = true;
-        $mail->Username = 'lyzerslab@ecommerce.glassfittingserviceinriyadh.com'; // SMTP username
-        $mail->Password = '@FXS-udGTq];'; // SMTP password
-        $mail->SMTPSecure = 'ssl'; // Enable SSL encryption
-        $mail->Port = 465; // SMTP port
-
-        // Email content
-        $mail->setFrom('lyzerslab@ecommerce.glassfittingserviceinriyadh.com', 'Lyzers Lab');
-        $mail->addAddress($recipientEmail); // Recipient email
-        $mail->isHTML(true);
-        $mail->Subject = $subject;
-        $mail->Body = $message;
-
-        // Send email
-        $mail->send();
-        return true;
-    } catch (Exception $e) {
-        return false;
-    }
-}
-
-// Check if form is submitted
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get form data
-    if(isset($_POST['subscriber_id'])) {
-        $subscriber_id = $_POST['subscriber_id']; // Subscriber ID is now retrieved from the form
-    } else {
-        echo "Subscriber ID not provided.";
-        exit;
-    }
-    $subject = $_POST['subject'];
-    $message = $_POST['message'];
-
-    // Check if the subject and message are not empty
-    if(empty($subject) || empty($message)) {
-        echo "Subject and email body cannot be empty.";
-        exit;
-    }
-
-    // Fetch subscriber's email based on the ID
-    $query = "SELECT email FROM `Formdata` WHERE id = :subscriber_id";
-    $stmt = $connection->prepare($query);
-    $stmt->bindParam(':subscriber_id', $subscriber_id, PDO::PARAM_INT);
-
-    // Execute the query
-    if ($stmt->execute()) {
-        // Fetch the subscriber's email
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($result) {
-            $recipientEmail = $result['email'];
-
-            // Prepare email content
-            $emailTemplate = "
-                <!DOCTYPE html>
-                <html lang='en'>
-                <head>
-                    <meta charset='UTF-8'>
-                    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-                    <title>Welcome to Lyzerslab</title>
-                    <!-- Bootstrap CSS -->
-                    <link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css'>
-                    <style>
-                        /* Your email template styles here */
-                    </style>
-                </head>
-                <body>
-                    <div class='container'>
-                        <div class='header'>
-                            <h1 style='color: #333;'>Welcome to Lyzerslab</h1>
-                        </div>
-                        <div class='content'>
-                            <p style='color: #666;'>$message</p>
-                            <img src='https://lyzerslab.com/lyzerslab-digital-agency.webp' style='display: block; margin: 0 auto;'>
-                        </div>
-                        <div class='footer'>
-                            <p style='color: #666;'>Best Regards,</p>
-                            <p style='color: #666; margin-top: -4px; margin-bottom: 0;'>CEO, Lyzerslab</p>
-                            <p style='color: #666; margin-bottom: 5px;'>Address: Uttara, Joynal Market, Dhaka-1230, Bangladesh.</p>
-                            <p style='color: #666; margin-bottom: 5px;'>Contact: Mobile: +880-1824-228-717, Mail: support@lyzerslab.com</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            ";
-
-            // Send email
-            sendEmail($recipientEmail, $subject, $emailTemplate);
-            echo "Email sent successfully to $recipientEmail";
-        } else {
-            echo "Subscriber not found.";
-        }
-    } else {
-        echo "Error fetching subscriber's email.";
-    }
-}
-
-// Retrieve subscriber ID from URL
-if(isset($_GET['id'])) {
-    $subscriber_id = $_GET['id'];
-} else {
-    echo "Subscriber ID not provided.";
-    exit;
-}
-?>
-
-
-
-    
-    <!-- HTML form for replying to the subscriber -->
-    <div class="col-md-8">
-        <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-            <input type="hidden" name="subscriber_id" value="<?php echo $subscriber_id; ?>">
-            <label for="subject">Subject:</label><br>
-            <input type="text" id="subject" name="subject" class="form-control"><br>
-            <label for="message">Message:</label><br>
-            <textarea id="message" name="message" rows="5" cols="50" class="form-control"></textarea><br>
-            <input type="submit" value="Send Reply" class="btn btn-primary">
-        </form>
-    </div>
-
-
-
-
-                        
+                
                         <footer class="footer mt-5">
                             <p class="mb-0">
                                 Copyright © <span>2024</span> Lyzerslab . All Rights Reserved.
@@ -367,6 +251,9 @@ if(isset($_GET['id'])) {
         </div>
     </main>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+
+    <script src="../files/js/userchart.js"></script>
 
     <!-- Notifications -->
     <script>
@@ -384,12 +271,7 @@ if(isset($_GET['id'])) {
             }
         });
     </script>
-
     <script>
-        function toggleUserOptions() {
-            var options = document.getElementById("userOptions");
-            options.style.display = (options.style.display === 'flex') ? 'none' : 'flex';
-        }
             // script.js
         document.addEventListener('DOMContentLoaded', function () {
             const wrapperIcon = document.querySelector('.app-sidebar-mb');
@@ -404,6 +286,6 @@ if(isset($_GET['id'])) {
             });
         });
     </script>
-    <script src="js/main.js"></script>
+    
 </body>
 </html>

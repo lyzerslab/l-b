@@ -111,10 +111,11 @@ if ($stmt = $connection->prepare($sql)) {
                                 <i class="fa-solid fa-blog"></i>
                                 <span class="block">Blog</span>
                             </a>
-                            <ul class="dropdown-menu" style="margin-top: -2px;">
+                                                       <ul class="dropdown-menu" style="margin-top: -2px;">
                                 <li><a href="manage_posts.php"><i class="fa-solid fa-list"></i> Manage Posts</a></li>
                                 <li><a href="add_post.php"><i class="fa-solid fa-plus"></i> Add New Post</a></li>
                                 <li><a href="manage_categories.php"><i class="fa-solid fa-tags"></i> Manage Categories</a></li>
+                                <li><a href="comments.php"><i class="fa-solid fa-tags"></i> Manage Comments</a></li>
                             </ul>
                         </li>
                     </ul>

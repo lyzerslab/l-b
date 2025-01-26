@@ -121,6 +121,7 @@ if ($stmt = $connection->prepare($sql)) {
                                 <li><a href="manage_posts.php"><i class="fa-solid fa-list"></i> Manage Posts</a></li>
                                 <li><a href="add_post.php"><i class="fa-solid fa-plus"></i> Add New Post</a></li>
                                 <li><a href="manage_categories.php"><i class="fa-solid fa-tags"></i> Manage Categories</a></li>
+                                <li><a href="comments.php"><i class="fa-solid fa-tags"></i> Manage Comments</a></li>
                             </ul>
                         </li>
                     </ul>
