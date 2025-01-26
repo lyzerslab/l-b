@@ -1,9 +1,8 @@
 <?php
-// Include the database configuration file
-require_once "../db-connection/config.php";
-
 // Initialize the session
 session_start();
+// Include the database configuration file
+require_once "../db-connection/config.php";
  
 // Use BASE_URL for redirects
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
@@ -11,30 +10,38 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
+// Handle file upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get the current year and month to create a folder
     $currentYearMonth = date('Y-m');  // Example: '2025-01'
 
-    // Local directory to store uploads, based on the year/month
-    $uploadDir = 'https://www.dashboard.lyzerslab.com/files/blog/uploads/' . $currentYearMonth . '/';
-    $webDir = 'hhttps://www.dashboard.lyzerslab.com/files/blog/uploads/' . $currentYearMonth . '/';  // Public URL for accessing uploaded files
+    // Define local directory and public URL for uploaded files
+    $uploadDir = __DIR__ . '../../../files/blog/uploads/' . $currentYearMonth . '/'; // Physical directory path
+    $webDir = BASE_URL . '../../../files/blog/uploads/' . $currentYearMonth . '/';   // Public URL
 
     // Ensure the uploads directory exists for the current month
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);  // Create the directory if it doesn't exist
+    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+        echo json_encode(['error' => 'Failed to create upload directory.']);
+        exit;
     }
 
-    // Handle the uploaded file
+    // Validate the uploaded file
+    if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['error' => 'No file uploaded or an upload error occurred.']);
+        exit;
+    }
+
     $file = $_FILES['file'];
     $fileName = basename($file['name']);
-    $targetPath = $uploadDir . $fileName;
-    $webPath = $webDir . $fileName;  // This will be saved in the database
+    $safeFileName = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $fileName); // Sanitize file name
+    $targetPath = $uploadDir . $safeFileName;
+    $webPath = $webDir . $safeFileName;
 
     // Validate file type and size
     $allowedTypes = [
         'image/jpeg', 'image/png', 'image/webp', 'image/gif', // Image formats
         'application/pdf',                                     // PDF
-        'video/mp4', 'video/mpeg', 'video/avi', 'video/webm'    // Video formats
+        'video/mp4', 'video/mpeg', 'video/avi', 'video/webm'   // Video formats
     ];
     if (!in_array($file['type'], $allowedTypes)) {
         echo json_encode(['error' => 'Invalid file type. Allowed types: JPEG, WEBP, PNG, GIF, PDF, MP4, MPEG, AVI, WEBM.']);
@@ -60,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Save file metadata to the database
             $stmt = $pdo->prepare("INSERT INTO media (file_name, file_path, file_type) VALUES (?, ?, ?)");
-            $stmt->execute([$fileName, $webPath, $file['type']]);
+            $stmt->execute([$safeFileName, $webPath, $file['type']]);
 
             echo json_encode(['success' => 'File uploaded successfully.', 'filePath' => $webPath]);
         } catch (PDOException $e) {
