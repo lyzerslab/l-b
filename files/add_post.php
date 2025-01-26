@@ -71,9 +71,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Image upload validation
     if ($_FILES["featured_image"]["error"] == 0) {
-        $allowed_types = ["image/jpeg", "image/png", "image/gif", "image/avif"];
+        $allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif"];
         if (!in_array($_FILES["featured_image"]["type"], $allowed_types)) {
-            $image_err = "Only JPG, PNG, GIF, and AVIF images are allowed.";
+            $image_err = "Only JPG, PNG, GIF, webp, and AVIF images are allowed.";
         } else {
             $target_dir = "blog/";
             $target_file = $target_dir . basename($_FILES["featured_image"]["name"]);
