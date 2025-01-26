@@ -1,16 +1,19 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// error_reporting(E_ALL);
+// ini_set('display_errors', 1);
+
 session_start();
 
+
+// Include config file
+require_once "../auth/db-connection/config.php";
+
 // Check if the user is logged in
+// Use BASE_URL for redirects
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("location: ../../../index.php");
+    header("location: " . BASE_URL . "index.php");
     exit;
 }
-
-// Include database configuration
-require_once "../auth/db-connection/config.php";
 
 // Check if the subscriber ID is provided
 if (isset($_GET['id'])) {

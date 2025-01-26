@@ -2,9 +2,9 @@
 // Initialize the session
 session_start();
 
-// Check if the user is logged in, if not then redirect to login page
+// Use BASE_URL for redirects
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("location: ../../../index.php");
+    header("location: " . BASE_URL . "index.php");
     exit;
 }
 

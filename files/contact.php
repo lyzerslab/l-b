@@ -1,19 +1,21 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// error_reporting(E_ALL);
+// ini_set('display_errors', 1);
 
+
+// Include config file
+require_once "../auth/db-connection/config.php";
 
 // Initialize the session
 session_start();
 
 // Check if the user is logged in, if not then redirect him to the login page
+// Use BASE_URL for redirects
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("location: ../../../index.php");
+    header("location: " . BASE_URL . "index.php");
     exit;
 }
 
-// Include config file
-require_once "../auth/db-connection/config.php";
 
 // Fetch additional user information from the database using the user ID
 $userId = $_SESSION["id"];

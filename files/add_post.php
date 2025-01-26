@@ -2,14 +2,16 @@
 // Initialize the session
 session_start();
 
+// Include config file
+require_once "../auth/db-connection/config.php";
+
 // Check if the user is logged in, if not then redirect him to the login page
+// Use BASE_URL for redirects
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("location: ../../../index.php");
+    header("location: " . BASE_URL . "index.php");
     exit;
 }
 
-// Include config file
-require_once "../auth/db-connection/config.php";
 
 // Initialize error variables
 $title_err = $slug_err = $content_err = $category_id_err = $status_err = $image_err = $tags_err = $success = "";

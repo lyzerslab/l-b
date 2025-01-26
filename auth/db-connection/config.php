@@ -1,5 +1,9 @@
 <?php
 
+// Define the base URL dynamically
+define('BASE_URL', ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http') . "://$_SERVER[HTTP_HOST]/");
+
+
 //Database connection config
 
 $config = array(

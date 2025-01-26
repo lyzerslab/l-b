@@ -2,14 +2,16 @@
 // Initialize the session
 session_start();
 
-// Check if the user is logged in
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("location: ../../../index.php");
-    exit;
-}
 
 // Include config file
 require_once "../auth/db-connection/config.php";
+// Check if the user is logged in
+// Use BASE_URL for redirects
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
+    header("location: " . BASE_URL . "index.php");
+    exit;
+}
+
 
 // Handle status update
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["update_status"])) {
