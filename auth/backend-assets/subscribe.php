@@ -1,7 +1,16 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// ini_set('display_errors', 1);
+// ini_set('display_startup_errors', 1);
+// error_reporting(E_ALL);
+
+// Initialize the session
+session_start();
+ 
+// Use BASE_URL for redirects
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
+    header("location: " . BASE_URL . "index.php");
+    exit;
+}
 
 // Allow requests from specific origin (replace with your actual domain)
 header("Access-Control-Allow-Origin: https://lyzerslab.com"); // Update with your allowed domain

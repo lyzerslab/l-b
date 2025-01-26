@@ -1,7 +1,7 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// ini_set('display_errors', 1);
+// ini_set('display_startup_errors', 1);
+// error_reporting(E_ALL);
 
 // Allow requests from specific origin (replace with your actual domain)
 header("Access-Control-Allow-Origin: https://lyzerslab.com"); // Update with your allowed domain
@@ -9,6 +9,15 @@ header("Access-Control-Allow-Origin: https://lyzerslab.com"); // Update with you
 header("Access-Control-Allow-Methods: POST");
 // Allow specific headers
 header("Access-Control-Allow-Headers: Content-Type");
+
+// Initialize the session
+session_start();
+ 
+// Use BASE_URL for redirects
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
+    header("location: " . BASE_URL . "index.php");
+    exit;
+}
 
 // Database connection credentials
 require_once "../db-connection/config.php";

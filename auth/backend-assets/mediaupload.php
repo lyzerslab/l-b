@@ -2,6 +2,15 @@
 // Include the database configuration file
 require_once "../db-connection/config.php";
 
+// Initialize the session
+session_start();
+ 
+// Use BASE_URL for redirects
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
+    header("location: " . BASE_URL . "index.php");
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get the current year and month to create a folder
     $currentYearMonth = date('Y-m');  // Example: '2025-01'

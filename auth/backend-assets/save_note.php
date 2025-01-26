@@ -2,6 +2,15 @@
 // Include database connection
 include "../db-connection/config.php";
 
+// Initialize the session
+session_start();
+ 
+// Use BASE_URL for redirects
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
+    header("location: " . BASE_URL . "index.php");
+    exit;
+}
+
 // Check if the request method is POST
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Get the project ID and note data from the request body
