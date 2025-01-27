@@ -66,15 +66,15 @@ try {
         $response['data'] = array_map(function ($blog) {
             // Construct full URL for the featured image
             $base_url = 'https://www.dashboard.lyzerslab.com/'; // Replace with your domain or path
-            $featured_image_url = $base_url . 'files/' . $blog['featured_image'];  // Replace with your actual image folder
+            $featured_image_url = $base_url . 'files/blog/uploads/featured-images/' . $blog['featured_image'];  // Correct folder path
 
             // Clean up the slug to replace `:` with `-` if needed, and avoid double hyphen
             $cleanSlug = str_replace(":", "-", $blog['slug']);  // Replace colon with hyphen
             $cleanSlug = preg_replace('/-+/', '-', $cleanSlug); // Remove any consecutive hyphens
 
-             // Use the author's profile photo from the database if available
-             $author_photo_base_path = $base_url . 'files/';  // Path to the author photo folder
-             $author_photo = $blog['author_photo'] ? $author_photo_base_path . $blog['author_photo'] : $author_photo_base_path . 'https://lyzerslab.com/_next/image?url=https%3A%2F%2Fwww.dashboard.lyzerslab.com%2Ffiles%2Fblog%2Fimage.avif&w=3840&q=75'; // Fallback to default if not set
+            // Use the author's profile photo from the database if available
+            $author_photo_base_path = $base_url . 'files/';  // Path to the author photo folder
+            $author_photo = $blog['author_photo'] ? $author_photo_base_path . $blog['author_photo'] : $author_photo_base_path . 'default.jpg'; // Fallback to default if not set
 
             // Return cleaned-up blog data with full image URL
             return [
