@@ -15,13 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get the current year and month to create a folder
     $currentYearMonth = date('Y-m');  // Example: '2025-01'
 
-    // Define local directory and public URL for uploaded files
-    $uploadDir = __DIR__ . '../../../files/blog/uploads/' . $currentYearMonth . '/'; // Physical directory path
-    $webDir = BASE_URL . '../../../files/blog/uploads/' . $currentYearMonth . '/';   // Public URL
-
-    // Ensure the uploads directory exists for the current month
+    $currentYearMonth = date('Y-m');  
+    $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/files/blog/uploads/' . $currentYearMonth . '/';
+    $webDir = 'https://www.dashboard.lyzerslab.com/files/blog/uploads/' . $currentYearMonth . '/';
+    
     if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
-        echo json_encode(['error' => 'Failed to create upload directory.']);
+        echo json_encode(['error' => 'Failed to create upload directory.', 'uploadDir' => $uploadDir]);
         exit;
     }
 
