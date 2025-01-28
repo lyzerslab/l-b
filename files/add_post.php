@@ -163,14 +163,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <script src="../files/js/main.js"></script>
     <script src="https://cdn.tiny.cloud/1/cpa4sj1jmm21qus4f9oxpb6hqfw7mvdp7ea40b4k1trzpmuj/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
         tinymce.init({
             selector: 'textarea#content',
-            plugins: 'link image lists media table wordcount',
-            toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image',
+            plugins: 'link image lists media table wordcount code', // Add 'code' to plugins
+            toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image | code', // Add 'code' to toolbar
         });
     });
-    </script>
+</script>
 </head>
 <body style="background: #f7f7f7;">
     <main>
