@@ -66,7 +66,7 @@ try {
         $response['data'] = array_map(function ($blog) {
             // Construct full URL for the featured image (without repeating the 'files/' path)
             $base_url = 'https://www.dashboard.lyzerslab.com/'; // Base URL
-            $featured_image_url = $base_url . 'files/blog/uploads/featured-images/' . $blog['featured_image'];  // Correct folder path
+            $featured_image_url = $blog['featured_image'];  // Correct folder path
 
             // Clean up the slug to replace `:` with `-` if needed, and avoid double hyphen
             $cleanSlug = str_replace(":", "-", $blog['slug']);  // Replace colon with hyphen
