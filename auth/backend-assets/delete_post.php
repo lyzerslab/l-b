@@ -2,7 +2,7 @@
 // Initialize the session
 session_start();
 
-// Include config file for base URL
+// Include config file for database connection
 require_once "../db-connection/config.php";
 
 // Check if the user is logged in
@@ -11,46 +11,62 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-// Check if the `id` parameter exists in the URL
+// Check if `id` is provided in the URL
 if (isset($_GET['id'])) {
     $postId = $_GET['id'];
 
     try {
-        // Start a transaction to ensure atomic operations
+        // Start transaction to ensure atomic operations
         $connection->beginTransaction();
 
-        // Delete tags associated with the blog
+        // 1️⃣ **Get the featured image path from the database**
+        $getImageQuery = "SELECT featured_image FROM blogs WHERE id = :id";
+        $stmt = $connection->prepare($getImageQuery);
+        $stmt->bindParam(':id', $postId, PDO::PARAM_INT);
+        $stmt->execute();
+        $imageData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // 2️⃣ **Delete the image file if it exists**
+        if ($imageData && !empty($imageData['featured_image'])) {
+            $imagePath = str_replace("https://www.dashboard.lyzerslab.com", $_SERVER['DOCUMENT_ROOT'], $imageData['featured_image']);
+            
+            if (file_exists($imagePath)) {
+                unlink($imagePath); // Delete the file
+            }
+        }
+
+        // 3️⃣ **Delete tags associated with the blog**
         $deleteTagsQuery = "DELETE FROM blog_tags WHERE blog_id = :id";
         $stmt = $connection->prepare($deleteTagsQuery);
         $stmt->bindParam(':id', $postId, PDO::PARAM_INT);
         $stmt->execute();
 
-        // Delete comments associated with the blog
+        // 4️⃣ **Delete comments associated with the blog**
         $deleteCommentsQuery = "DELETE FROM comments WHERE blog_id = :id";
         $stmt = $connection->prepare($deleteCommentsQuery);
         $stmt->bindParam(':id', $postId, PDO::PARAM_INT);
         $stmt->execute();
 
-        // Delete the blog post
+        // 5️⃣ **Delete the blog post itself**
         $deleteBlogQuery = "DELETE FROM blogs WHERE id = :id";
         $stmt = $connection->prepare($deleteBlogQuery);
         $stmt->bindParam(':id', $postId, PDO::PARAM_INT);
         $stmt->execute();
 
-        // Commit the transaction
+        // ✅ **Commit transaction**
         $connection->commit();
 
-        // Redirect to the blog management page with a success message
+        // ✅ **Redirect with success message**
         header("location: " . BASE_URL . "files/manage_posts.php?message=Post deleted successfully.");
         exit;
     } catch (Exception $e) {
-        // Rollback the transaction in case of an error
+        // ❌ **Rollback transaction in case of error**
         $connection->rollBack();
         header("location: " . BASE_URL . "files/manage_posts.php?error=An error occurred: " . $e->getMessage());
         exit;
     }
 } else {
-    // Redirect if the ID is not provided
+    // ❌ Redirect if ID is missing
     header("location: " . BASE_URL . "files/manage_posts.php?error=Invalid request.");
     exit;
 }

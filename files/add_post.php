@@ -68,30 +68,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         $status = trim($_POST["status"]);
     }
-
     // Image upload validation (Featured Image)
     if ($_FILES["featured_image"]["error"] == 0) {
         $allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif"];
+        
         if (!in_array($_FILES["featured_image"]["type"], $allowed_types)) {
             $image_err = "Only JPG, PNG, GIF, webp, and AVIF images are allowed.";
         } else {
-            // Create the directory structure for featured images (e.g., 'files/blog/uploads/featured-images/YYYY-MM/')
-            $currentYearMonth = date('Y-m');  // Example: '2025-01'
+            // Directory structure: 'files/blog/uploads/featured-images/YYYY-MM/'
+            $currentYearMonth = date('Y-m'); 
             $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/files/blog/uploads/featured-images/' . $currentYearMonth . '/';
             $webDir = 'https://www.dashboard.lyzerslab.com/files/blog/uploads/featured-images/' . $currentYearMonth . '/';
             
-            // Create the directory if it doesn't exist
             if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
                 $image_err = "Failed to create the upload directory.";
             }
 
-            // Generate a safe name for the image
-            $featured_image_name = basename($_FILES["featured_image"]["name"]);
-            $featured_image_name = strtolower(preg_replace('/[^a-z0-9_\-\.]/', '-', $featured_image_name));  // Slugify
-            $target_file = $uploadDir . $featured_image_name;
+            // Generate a unique name for the image
+            $ext = pathinfo($_FILES["featured_image"]["name"], PATHINFO_EXTENSION);
+            $uniqueName = time() . '-' . uniqid() . '.' . $ext;  // Example: 1706529183-63a9f0ea7bb98050796b649e.png
+
+            $target_file = $uploadDir . $uniqueName;
 
             if (move_uploaded_file($_FILES["featured_image"]["tmp_name"], $target_file)) {
-                $featured_image = $webDir . $featured_image_name;
+                $featured_image = $webDir . $uniqueName;
             } else {
                 $image_err = "Sorry, there was an error uploading your file.";
             }

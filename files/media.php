@@ -281,65 +281,79 @@ if ($stmt = $connection->prepare($sql)) {
             }
         });
 
-        // Load uploaded files
+        // Load files and featured images
         async function loadFiles() {
-                const response = await fetch('../auth/backend-assets/getmedia.php'); // Fetch media data from backend
-                const files = await response.json(); // Parse the response to JSON
+            const response = await fetch('../auth/backend-assets/getmedia.php'); // Fetch media and featured images data
+            const data = await response.json(); // Parse the response to JSON
 
-                const fileList = document.getElementById('fileList');
-                fileList.innerHTML = ''; // Clear the existing list of files
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = ''; // Clear the existing list of files
 
-                files.forEach(file => {
-                    const col = document.createElement('div');
-                    col.className = 'col mb-4'; // Bootstrap column class for spacing
+            // Display media files
+            data.media_files.forEach(file => {
+                const col = document.createElement('div');
+                col.className = 'col mb-4'; // Bootstrap column class for spacing
 
-                    let content;
+                let content;
 
-                    // Determine how to render the file based on its type
-                    if (file.file_type.startsWith('image')) {
-                        // Image preview
-                        content = `<img src="${file.file_path}" alt="${file.file_name}" style="width: 100%; height: 150px; object-fit: cover;" class="rounded shadow">`;
-                    } else if (file.file_type.startsWith('video')) {
-                        // Video preview
-                        content = `<video controls style="width: 100%; height: 150px; object-fit: cover;" class="rounded shadow">
-                                    <source src="${file.file_path}" type="${file.file_type}">
-                                    Your browser does not support the video tag.
-                                </video>`;
-                    } else {
-                        // Link for other file types
-                        content = `<div class="text-center">
-                                    <a href="${file.file_path}" target="_blank" class="btn btn-outline-primary">
-                                        View File
-                                    </a>
-                                </div>`;
-                    }
+                if (file.file_type.startsWith('image')) {
+                    content = `<img src="${file.file_path}" alt="${file.file_name}" style="width: 100%; height: 150px; object-fit: cover;" class="rounded shadow">`;
+                } else if (file.file_type.startsWith('video')) {
+                    content = `<video controls style="width: 100%; height: 150px; object-fit: cover;" class="rounded shadow">
+                                <source src="${file.file_path}" type="${file.file_type}">
+                                Your browser does not support the video tag.
+                            </video>`;
+                } else {
+                    content = `<div class="text-center">
+                                <a href="${file.file_path}" target="_blank" class="btn btn-outline-primary">
+                                    View File
+                                </a>
+                            </div>`;
+                }
 
-                    // Build the card HTML, show the file path and a button to copy the path
-                    col.innerHTML = `
-                        <div class="card shadow-sm">
-                            ${content}
-                            <div class="card-body text-center">
-                                <button class="btn btn-outline-secondary" onclick="copyFilePath('${file.file_path}')">Copy Path</button>
-                            </div>
+                col.innerHTML = `
+                    <div class="card shadow-sm">
+                        ${content}
+                        <div class="card-body text-center">
+                            <button class="btn btn-outline-secondary" onclick="copyFilePath('${file.file_path}')">Copy Path</button>
                         </div>
-                    `;
-                    fileList.appendChild(col);
-                });
-            }
+                    </div>
+                `;
+                fileList.appendChild(col);
+            });
 
-            // Copy file path to clipboard
-            function copyFilePath(filePath) {
-                const tempInput = document.createElement('input');
-                document.body.appendChild(tempInput);
-                tempInput.value = filePath;
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-                alert('File path copied to clipboard!');
-            }
+            // Display featured images
+            data.featured_images.forEach(image => {
+                const col = document.createElement('div');
+                col.className = 'col mb-4'; // Bootstrap column class for spacing
 
-            // Load files on page load
-            loadFiles();
+                const content = `<img src="${image.featured_image}" alt="Featured Image" style="width: 100%; height: 150px; object-fit: cover;" class="rounded shadow">`;
+
+                col.innerHTML = `
+                    <div class="card shadow-sm">
+                        ${content}
+                        <div class="card-body text-center">
+                            <button class="btn btn-outline-secondary" onclick="copyFilePath('${image.featured_image}')">Copy Path</button>
+                        </div>
+                    </div>
+                `;
+                fileList.appendChild(col);
+            });
+        }
+
+        // Copy file path to clipboard
+        function copyFilePath(filePath) {
+            const tempInput = document.createElement('input');
+            document.body.appendChild(tempInput);
+            tempInput.value = filePath;
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            alert('File path copied to clipboard!');
+        }
+
+        // Load files on page load
+        loadFiles();
     </script>
     
 </body>
