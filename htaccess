@@ -1,0 +1,7 @@
+# Disable Lightspeed Cache
+<IfModule LiteSpeed>
+    CacheDisable on
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes
