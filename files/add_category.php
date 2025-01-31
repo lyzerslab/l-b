@@ -109,6 +109,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <span class="block">Projects</span>
                                 </a>
                             </li>
+
+                            <li class="">
+                            <a href="manage-license.php">
+                                <i class="fa-solid fa-file"></i>
+                                <span class="block">Manage Licenses</span>
+                            </a>
+                        </li>
+
+                        
                             <li class="">
                             <a href="media.php">
                                 <i class="fa-regular fa-user"></i>

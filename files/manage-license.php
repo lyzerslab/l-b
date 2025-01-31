@@ -6,61 +6,82 @@ session_start();
 // Include config file
 require_once "../auth/db-connection/config.php";
 
-// Check if the user is logged in, if not then redirect to the login page
+// Check if the user is logged in, if not then redirect him to the login page
 // Use BASE_URL for redirects
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: " . BASE_URL . "index.php");
     exit;
 }
 
-// Fetch all categories
-$sql = "SELECT * FROM categories ORDER BY created_at DESC";
-$categories = $connection->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+// Fetch additional user information from the database using the user ID
+$userId = $_SESSION["id"];
+$sql = "SELECT profile_photo FROM admin_users WHERE id = :userId";
 
-
-// Check if edit request is made
-$editMode = false;
-$editCategory = [];
-
-// Handle edit request
-if (isset($_GET['edit_id'])) {
-    $editMode = true;
-    $editId = $_GET['edit_id'];
-
-    // Fetch the category to edit
-    $sql = "SELECT * FROM categories WHERE id = :id";
-    $stmt = $connection->prepare($sql);
-    $stmt->bindParam(':id', $editId, PDO::PARAM_INT);
-    $stmt->execute();
-    $editCategory = $stmt->fetch(PDO::FETCH_ASSOC);
-}
-
-// Handle form submission for updating a category
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_category'])) {
-    $id = $_POST['id'];
-    $name = $_POST['name'];
-    $description = $_POST['description'];
-
-    // Update query
-    $sql = "UPDATE categories SET name = :name, description = :description WHERE id = :id";
-    $stmt = $connection->prepare($sql);
-    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-    $stmt->bindParam(':name', $name, PDO::PARAM_STR);
-    $stmt->bindParam(':description', $description, PDO::PARAM_STR);
+if ($stmt = $connection->prepare($sql)) {
+    $stmt->bindParam(":userId", $userId, PDO::PARAM_INT);
 
     if ($stmt->execute()) {
-        header("location: manage_categories.php?message=Category updated successfully.");
-        exit;
+        $stmt->bindColumn("profile_photo", $profilePhoto);
+        if ($stmt->fetch()) {
+            // User profile photo found, update the session
+            $_SESSION["profile_photo"] = $profilePhoto;
+        } else {
+            // User not found or profile photo not set, you can handle this case
+        }
     } else {
-        echo "<div class='alert alert-danger'>Failed to update the category.</div>";
+        echo "Oops! Something went wrong. Please try again later.";
+    }
+
+    unset($stmt); // Close statement
+}
+
+
+$message = "";
+
+// Function to generate a random license key
+function generateLicenseKey($length = 20) {
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'; // includes small & capital letters and numbers
+    $license_key = '';
+    for ($i = 0; $i < $length; $i++) {
+        $license_key .= $characters[random_int(0, strlen($characters) - 1)];
+    }
+    return $license_key;
+}
+
+// Handle domain & license generation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['domain'])) {
+    $domain = trim($_POST['domain']);
+
+    // Validate domain (basic validation)
+    if (filter_var($domain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
+        // Generate a custom license key
+        $license_key = generateLicenseKey(30); // 30 characters long with small, capital letters, and numbers
+
+        try {
+            // Insert into the database
+            $stmt = $connection->prepare("INSERT INTO licenses (domain, license_key, expiry_date) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 YEAR))");
+            $stmt->execute([$domain, $license_key]);
+            $message = "<div class='alert alert-success'>License generated successfully!</div>";
+        } catch (PDOException $e) {
+            $message = "<div class='alert alert-danger'>Error: " . $e->getMessage() . "</div>";
+        }
+    } else {
+        $message = "<div class='alert alert-danger'>Invalid domain format!</div>";
     }
 }
+
+// Fetch existing licenses
+$stmt = $connection->prepare("SELECT id, domain, license_key, created_at, expiry_date FROM licenses ORDER BY created_at DESC");
+$stmt->execute();
+$licenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashbaord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,10 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_category'])) {
 
     <script src="../files/js/main.js"></script>
 </head>
-<body>
-
-
-<body style="background: #f7f7f7;">
+<body style="background:#f7f7f7;">
     <main>
         <div class="app-wrapper">
             <div class="app-sidebar">
@@ -89,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_category'])) {
                 </div>
                 <div class="sidebard-nav">
                     <ul>
-                        <li class="active">
+                        <li class="">
                             <a href="dashboard.php">
                                 <i class="fa-solid fa-table-columns"></i>
                                 <span class="block">Dashboard</span>
@@ -107,6 +125,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_category'])) {
                             <a href="contact.php">
                                <i class="fa-solid fa-cart-flatbed-suitcase"></i>
                                 <span class="block">Contact</span>
+                            </a>
+                        </li>
+
+                        <li class="">
+                            <a href="media.php">
+                                <i class="fa-regular fa-user"></i>
+                                <span class="block">Media</span>
                             </a>
                         </li>
 
@@ -130,6 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_category'])) {
                                 <span class="block">Manage Licenses</span>
                             </a>
                         </li>
+
                         <li class="">
                             <a href="media.php">
                                 <i class="fa-regular fa-user"></i>
@@ -142,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_category'])) {
                                 <i class="fa-solid fa-blog"></i>
                                 <span class="block">Blog</span>
                             </a>
-                                                       <ul class="dropdown-menu" style="margin-top: -2px;">
+                            <ul class="dropdown-menu" style="margin-top: -2px;">
                                 <li><a href="manage_posts.php"><i class="fa-solid fa-list"></i> Manage Posts</a></li>
                                 <li><a href="add_post.php"><i class="fa-solid fa-plus"></i> Add New Post</a></li>
                                 <li><a href="manage_categories.php"><i class="fa-solid fa-tags"></i> Manage Categories</a></li>
@@ -152,8 +178,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_category'])) {
                     </ul>
                 </div>
             </div>
-
-            <!-- Header and Main Content -->
             <div class="header-body">
                 <div class="app-sidebar-mb">
                     <div class="nav-mb-icon">
@@ -219,78 +243,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_category'])) {
                         </div>
                     </div>
                 </div>
-
                 <div class="h-container">
-                    <div class="container mt-5">
-                        <h1 class="page-heading">Manage Categories</h1>
+                    <div class="main">
+                    
 
-                        <!-- Add New Post Button -->
-                        <div class="mb-3 text-end">
-                            <a href="add_category.php" class="btn btn-success">
-                                <i class="fa-solid fa-plus"></i> Add New Category
-                            </a>
-                        </div>
-                        <!-- Categories Table -->
-                        <div class="table-responsive">
-                            <h2>Categories List</h2>
-                            <table class="table table-bordered table-striped">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Name</th>
-                                        <th>Description</th>
-                                        <th>Created At</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (!empty($categories)) : ?>
-                                        <?php foreach ($categories as $category) : ?>
-                                            <tr>
-                                                <td><?php echo $category['id']; ?></td>
-                                                <td><?php echo htmlspecialchars($category['name']); ?></td>
-                                                <td><?php echo htmlspecialchars($category['description']); ?></td>
-                                                <td><?php echo date('Y-m-d', strtotime($category['created_at'])); ?></td>
-                                                <td>
-                                                <a href="edit_post.php?id=<?php echo $post['id']; ?>" class="btn btn-primary btn-sm">Edit</a>
-                                                    <a href="delete_category.php?id=<?php echo $category['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this category?');">Delete</a>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php else : ?>
-                                        <tr>
-                                            <td colspan="5" class="text-center">No categories found.</td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
+                    <h2 class="mb-4 text-center">License Management</h2>
+    
+                    <?= $message; ?>
 
-                            <div class="container mt-5">
-                                <?php if ($editMode && !empty($editCategory)) : ?>
-                                    <h2>Edit Category</h2>
-                                    <form method="POST" action="manage_categories.php">
-                                        <input type="hidden" name="id" value="<?php echo $editCategory['id']; ?>">
-                                        <div class="mb-3">
-                                            <label for="name" class="form-label">Category Name</label>
-                                            <input type="text" name="name" id="name" class="form-control" value="<?php echo htmlspecialchars($editCategory['name']); ?>" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="description" class="form-label">Description</label>
-                                            <textarea name="description" id="description" class="form-control" rows="3" required><?php echo htmlspecialchars($editCategory['description']); ?></textarea>
-                                        </div>
-                                        <button type="submit" name="update_category" class="btn btn-primary">Update Category</button>
-                                        <a href="manage_categories.php" class="btn btn-secondary">Cancel</a>
-                                    </form>
-                                <?php endif; ?>
+                    <div class="card p-4 shadow-sm">
+                        <form method="POST" class="row g-3">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" name="domain" placeholder="Enter domain (example.com)" required>
                             </div>
-                        </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary w-100">Generate License</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <h3 class="mt-4">Existing Licenses</h3>
+                    <table class="table table-bordered table-striped mt-3">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Domain</th>
+                                <th>License Key</th>
+                                <th>Created At</th>
+                                <th>Expiry Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($licenses as $license): ?>
+                            <tr>
+                                <td><?= $license['id']; ?></td>
+                                <td><?= $license['domain']; ?></td>
+                                <td><?= $license['license_key']; ?></td>
+                                <td><?= date("Y-m-d", strtotime($license['created_at'])); ?></td>
+                                <td><?= date("Y-m-d", strtotime($license['expiry_date'])); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                
+                        <footer class="footer mt-5">
+                            <p class="mb-0">
+                                Copyright © <span>2024</span> Lyzerslab . All Rights Reserved.
+                            </p>
+                        </footer>
                     </div>
                 </div>
             </div>
-            
         </div>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+
+    <script src="../files/js/userchart.js"></script>
+
+    <!-- Notifications -->
+    <script>
+        // Get references to the notifications icon and menu
+        const notificationsIcon = document.getElementById('notificationsDropdown');
+        const notificationsMenu = document.getElementById('notificationsMenu');
+
+        // Add a click event listener to the notifications icon
+        notificationsIcon.addEventListener('click', function() {
+            // Toggle the display of the notifications menu
+            if (notificationsMenu.style.display === 'none') {
+                notificationsMenu.style.display = 'block';
+            } else {
+                notificationsMenu.style.display = 'none';
+            }
+        });
+    </script>
+    <script>
+            // script.js
+        document.addEventListener('DOMContentLoaded', function () {
+            const wrapperIcon = document.querySelector('.app-sidebar-mb');
+            const appWrapperS = document.querySelector('.app-wrapper');
+            const deskNav =  document.getElementById("des-nav");
+
+        wrapperIcon.addEventListener('click', function () {
+                appWrapperS.classList.toggle('show-sidebar');
+            });
+        deskNav.addEventListener('click', function () {
+                appWrapperS.classList.remove('show-sidebar');
+            });
+        });
+    </script>
+    
 </body>
 </html>
+

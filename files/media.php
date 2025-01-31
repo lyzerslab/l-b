@@ -100,6 +100,13 @@ if ($stmt = $connection->prepare($sql)) {
                                 <span class="block">Projects</span>
                             </a>
                         </li>
+
+                        <li class="">
+                            <a href="manage-license.php">
+                                <i class="fa-solid fa-file"></i>
+                                <span class="block">Manage Licenses</span>
+                            </a>
+                        </li>
                         <li class="active">
                             <a href="media.php">
                                 <i class="fa-regular fa-user"></i>
