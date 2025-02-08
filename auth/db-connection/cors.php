@@ -1,6 +1,6 @@
 <?php
 // Allow requests only from your specific domain
-header('Access-Control-Allow-Origin: https://lyzerslab.com');
+header('Access-Control-Allow-Origin: *');
 
 // Allow the following HTTP methods
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
