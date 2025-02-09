@@ -1,10 +1,21 @@
 <?php
 
-require_once '../../db-connection/cors.php';
-require_once '../../db-connection/config.php';
+// Allow requests only from your specific domain
+header('Access-Control-Allow-Origin: https://lyzerslab.com/');
 
-// Set content type to JSON
-header('Content-Type: application/json');
+// Allow the following HTTP methods
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
+
+// Allow the following headers
+header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization');
+
+// Allow cookies to be sent with the request (useful for sessions or authentication tokens)
+header('Access-Control-Allow-Credentials: true');
+
+// Set the response content type to JSON
+header('Content-Type: application/json; charset=UTF-8');
+
+require_once '../../db-connection/config.php';
 
 // Base URLs
 $base_url = 'https://www.dashboard.lyzerslab.com/';
