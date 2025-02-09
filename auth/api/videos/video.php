@@ -1,23 +1,13 @@
 <?php
-// Allow requests from any origin (change * to your domain for security)
-header('Access-Control-Allow-Origin: https://lyzerslab.com/');
+header("Access-Control-Allow-Origin: https://lyzerslab.com");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Accept");
+header("Access-Control-Allow-Credentials: true");
 
-// Allow specific HTTP methods
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
-
-// Allow specific headers
-header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization');
-
-// Allow credentials (if using authentication tokens or cookies)
-header('Access-Control-Allow-Credentials: true');
-
-// Set response content type
-header('Content-Type: application/json; charset=UTF-8');
-
-// Handle preflight (OPTIONS) request for CORS
+// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
+    header("HTTP/1.1 200 OK");
+    exit();
 }
 
 require_once '../../db-connection/config.php';
