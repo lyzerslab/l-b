@@ -55,8 +55,11 @@ try {
         $response = [
             'status' => 'success',
             'data' => array_map(function ($blog) use ($base_url, $author_photo_path) {
+                // Check if the featured_image already contains the full URL
                 $featured_image_url = !empty($blog['featured_image']) 
-                    ? $base_url . ltrim(str_replace('/dashboard.lyzerslab.com/', '', $blog['featured_image']), '/') 
+                    ? (strpos($blog['featured_image'], 'http') === 0 
+                        ? $blog['featured_image'] 
+                        : $base_url . ltrim($blog['featured_image'], '/'))
                     : $base_url . 'files/blog/uploads/featured-images/default-image.jpg';
                 
                 $author_photo_url = !empty($blog['author_photo']) 
