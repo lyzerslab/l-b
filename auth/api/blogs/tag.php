@@ -53,15 +53,23 @@ try {
     $stmt->execute();
     $blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    if ($blogs) {
+    if ($blogs) {  // ✅ Check if blogs exist
         $response['status'] = 'success';
 
-        // Process blogs data
-        $response['data'] = array_map(function ($blog) use ($image_path, $author_photo_path) {
-            // Construct full image URLs
-            $featured_image_url = !empty($blog['featured_image']) ? $image_path . basename($blog['featured_image']) : $image_path . 'default-image.jpg';
+        $response['data'] = array_map(function ($blog) use ($base_url, $author_photo_path) {
+            if (!empty($blog['featured_image'])) {
+                // Remove leading slash and incorrect domain part if present
+                $cleaned_path = str_replace('/dashboard.lyzerslab.com/', '', $blog['featured_image']);
+        
+                // Ensure full URL with base path
+                $featured_image_url = $base_url . ltrim($cleaned_path, '/');
+            } else {
+                $featured_image_url = $base_url . 'files/blog/uploads/featured-images/default-image.jpg';
+            }
+        
+            // Construct author photo URL
             $author_photo_url = !empty($blog['author_photo']) ? $author_photo_path . $blog['author_photo'] : $author_photo_path . 'default.jpg';
-
+        
             return [
                 'id' => (int) $blog['id'],
                 'title' => $blog['title'],
@@ -80,6 +88,7 @@ try {
         $response['status'] = 'error';
         $response['message'] = 'No blogs found.';
     }
+
 } catch (PDOException $e) {
     $response['status'] = 'error';
     $response['message'] = 'Database query failed: ' . $e->getMessage();
