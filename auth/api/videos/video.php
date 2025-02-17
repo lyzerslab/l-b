@@ -1,5 +1,20 @@
 <?php
-header("Access-Control-Allow-Origin: https://lyzerslab.com");
+// Enable error reporting for debugging (Remove in production)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// ✅ Improved CORS Handling
+$allowedOrigins = [
+    "https://lyzerslab.com",
+    "https://dashboard.lyzerslab.com"
+];
+
+if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowedOrigins)) {
+    header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);
+} else {
+    header("Access-Control-Allow-Origin: *"); // Allow all origins for testing
+}
+
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Accept");
 header("Access-Control-Allow-Credentials: true");
@@ -19,46 +34,51 @@ function respond($status, $data) {
     exit();
 }
 
-// Define the upload directory
-$uploadsDir = __DIR__ . '/uploads/';
+// ✅ Use absolute path for uploads directory
+$uploadsDir = $_SERVER['DOCUMENT_ROOT'] . '/auth/api/videos/uploads/';
 if (!is_dir($uploadsDir)) {
     mkdir($uploadsDir, 0777, true); // Create the directory if it doesn't exist
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Ensure a file was uploaded
+        // ✅ Check if the uploads directory is writable
+        if (!is_writable($uploadsDir)) {
+            respond(500, ["error" => "Uploads directory is not writable"]);
+        }
+
+        // ✅ Ensure a file was uploaded
         if (!isset($_FILES['video'])) {
             respond(400, ["error" => "Video file is required"]);
         }
 
         $video = $_FILES['video'];
 
-        // Ensure there was no error during upload
+        // ✅ Ensure there was no upload error
         if ($video['error'] !== UPLOAD_ERR_OK) {
             respond(400, ["error" => "Failed to upload video"]);
         }
 
-        // Validate file extension
+        // ✅ Validate file extension
         $fileExtension = strtolower(pathinfo($video['name'], PATHINFO_EXTENSION));
         if ($fileExtension !== 'webm') {
             respond(400, ["error" => "Only WebM videos are allowed"]);
         }
 
-        // Generate a unique ID for the video
+        // ✅ Generate a unique ID for the video
         $id = bin2hex(random_bytes(16));
         $filename = $id . '.webm';
         $zipFilename = $id . '.zip';
 
-        // Set the file path to save the video
+        // ✅ Set the file path to save the video
         $videoPath = $uploadsDir . $filename;
 
-        // Move the uploaded video to the upload directory
+        // ✅ Move the uploaded video to the uploads directory
         if (!move_uploaded_file($video['tmp_name'], $videoPath)) {
             respond(500, ["error" => "Failed to save video file"]);
         }
 
-        // Create a ZIP file
+        // ✅ Create a ZIP file
         $zipPath = $uploadsDir . $zipFilename;
         $zip = new ZipArchive();
         if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
@@ -67,15 +87,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $zip->addFile($videoPath, $filename);
         $zip->close();
 
-        // Remove the original .webm file to save space
+        // ✅ Remove the original .webm file to save space
         unlink($videoPath);
 
-        // Save video data to the database with the ZIP file reference
+        // ✅ Save video data to the database with the ZIP file reference
         $db = getDatabaseConnection();
         $stmt = $db->prepare("INSERT INTO videos (id, filename, zip_filename) VALUES (?, ?, ?)");
-        $stmt->execute([$id, $filename, $zipFilename]);
+        if (!$stmt->execute([$id, $filename, $zipFilename])) {
+            respond(500, ["error" => "Failed to insert video record"]);
+        }
 
-        // ✅ Fixed: Proper HTTP/HTTPS detection
+        // ✅ Generate the share link
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
         $baseUrl = $protocol . '://' . $_SERVER['HTTP_HOST'];
         $shareLink = $baseUrl . '/share/' . $id;
@@ -101,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             respond(404, ["error" => "Video not found"]);
         }
 
-        // Generate the URL for the ZIP file
+        // ✅ Generate the URL for the ZIP file
         $zipUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/auth/api/videos/uploads/' . $video['zip_filename'];
 
         respond(200, ["id" => $id, "zip_url" => $zipUrl]);
