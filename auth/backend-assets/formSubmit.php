@@ -1,82 +1,81 @@
 <?php
-// ini_set('display_errors', 1);
-// ini_set('display_startup_errors', 1);
-// error_reporting(E_ALL);
-
-// Allow requests from specific origin (replace with your actual domain)
-header("Access-Control-Allow-Origin: https://lyzerslab.com"); // Update with your allowed domain
-// Allow the use of certain methods
+header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST");
-// Allow specific headers
 header("Access-Control-Allow-Headers: Content-Type");
 
-// Database connection credentials
 require_once "../db-connection/config.php";
 
-// Check if the request method is POST
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get the raw POST data
     $post_data = file_get_contents("php://input");
-    // Decode the JSON data into an associative array
     $data = json_decode($post_data, true);
 
-    // Check if all required fields are set
     if (isset($data['name'], $data['email'], $data['phone'], $data['service'], $data['message'])) {
-        // Validate email format
         if (filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             $name = $data['name'];
             $email = $data['email'];
             $phone = $data['phone'];
             $service = $data['service'];
             $message = $data['message'];
-            $web_package = $data['packageOption'];
-            
+            $platform = isset($data['platform']) ? $data['platform'] : null;
+            $web_package = isset($data['packageOption']) ? $data['packageOption'] : null;
 
             try {
-                // Prepare a parameterized SQL statement (prevents SQL injection)
-                $stmt_insert = $connection->prepare("INSERT INTO formdata (name, email, phone, service, web_package, message, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
-                // Bind parameters
+                $stmt_insert = $connection->prepare("INSERT INTO formdata (name, email, phone, service, platform, web_package, message, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+                
                 $stmt_insert->bindValue(1, $name);
                 $stmt_insert->bindValue(2, $email);
                 $stmt_insert->bindValue(3, $phone);
                 $stmt_insert->bindValue(4, $service);
-                $stmt_insert->bindValue(5, $web_package);
-                $stmt_insert->bindValue(6, $message);
+                $stmt_insert->bindValue(5, $platform);
+                $stmt_insert->bindValue(6, $web_package);
+                $stmt_insert->bindValue(7, $message);
 
-                // Execute the statement
                 if ($stmt_insert->execute()) {
-                    $response = array("success" => true, "message" => "Form data inserted successfully");
+                    // Send email notification
+                    $to = "support@lyzerslab.com";
+                    $subject = "New Contact Form Submission";
+                    $email_message = "Name: $name\n";
+                    $email_message .= "Email: $email\n";
+                    $email_message .= "Phone: $phone\n";
+                    $email_message .= "Service: $service\n";
+                    if ($platform) {
+                        $email_message .= "Platform: $platform\n";
+                    }
+                    if ($web_package) {
+                        $email_message .= "Package: $web_package\n";
+                    }
+                    $email_message .= "Message: $message\n";
+
+                    $headers = "From: $email";
+
+                    mail($to, $subject, $email_message, $headers);
+
+                    $response = array("success" => true, "message" => "Form submitted successfully");
                     echo json_encode($response);
                 } else {
-                    $response = array("success" => false, "error" => "Error inserting form data: " . $stmt_insert->errorInfo()[2]); // Use errorInfo for details
+                    $response = array("success" => false, "error" => "Error inserting form data");
                     echo json_encode($response);
                 }
             } catch (PDOException $e) {
-                // Catch PDO exceptions
-                $response = array("success" => false, "error" => "Internal server error: " . $e->getMessage());
+                $response = array("success" => false, "error" => "Database error: " . $e->getMessage());
                 echo json_encode($response);
             } finally {
-                // Close the prepared statement (if created)
                 if (isset($stmt_insert)) {
-                    $stmt_insert->closeCursor(); // Use closeCursor instead of close
+                    $stmt_insert->closeCursor();
                 }
             }
         } else {
-            // If the email field is not valid, return an error
-            $response = array("success" => false, "error" => "Invalid email address provided");
+            $response = array("success" => false, "error" => "Invalid email address");
             echo json_encode($response);
         }
     } else {
-        // If any required field is missing, return an error
-        $response = array("success" => false, "error" => "All fields are required");
+        $response = array("success" => false, "error" => "Missing required fields");
         echo json_encode($response);
     }
 
-    // Close connection
-    $connection = null; // Close the database connection
+    $connection = null;
 } else {
-    // If the request method is not POST, return an error
-    $response = array("success" => false, "error" => "Only POST requests are allowed");
+    $response = array("success" => false, "error" => "Invalid request method");
     echo json_encode($response);
 }
 ?>
